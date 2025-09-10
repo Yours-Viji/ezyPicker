@@ -43,12 +43,7 @@ class LoginViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false
         )
-     fun  clearpref(){
-        CoroutineScope(Dispatchers.IO).launch {
-            preferencesManager.clearUserPreferences()
-        }
 
-    }
     fun onEmployeePinChange(employeeCode: String) {
         _stateFlow.value = _stateFlow.value.copy(employeePin = employeeCode)
     }

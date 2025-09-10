@@ -44,20 +44,24 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -65,6 +69,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,9 +94,12 @@ import coil.compose.AsyncImage
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.domain.model.AppMode
 import com.ezycart.presentation.ScannerViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -99,65 +107,91 @@ fun HomeScreen(
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
     onLogout: () -> Unit
-    ) {
-
-    // val state by viewModel.stateFlow.collectAsStateWithLifecycle()
+) {
     val context = LocalContext.current
     val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
     val isActivated = viewModel.cartId.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
     val employeeName = viewModel.employeeName.collectAsState()
-    // Observe updates from StateFlow
-    val productInfo by viewModel.priceDetails.collectAsState()
+    val priceInfo by viewModel.priceDetails.collectAsState()
+    val productInfo by viewModel.productInfo.collectAsState()
 
-    LaunchedEffect(productInfo) {
-        if (productInfo != null) {
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var canShowPriceChecker = remember { mutableStateOf(true) }
+    val appMode by viewModel.appMode.collectAsState()
+    LaunchedEffect(priceInfo) {
+        if (priceInfo != null) {
             showDialog.value = true
         }
     }
-
     if (showDialog.value) {
-        ProductPriceAlert(viewModel = viewModel) {
-            showDialog.value = false
-            viewModel.resetProductInfoDetails()
+        if (canShowPriceChecker.value){
+            ProductPriceAlert(viewModel = viewModel) {
+                showDialog.value = false
+            }
+        }else{
+            productInfo?.let { viewModel.addProductToShoppingCart(it.barcode, 1) }
         }
     }
+
     LaunchedEffect(Unit) {
         viewModel.initNewShopping()
     }
-   /* LaunchedEffect(isActivated.value) {
-        if (isActivated.value.isNullOrEmpty()) {
-            viewModel.initNewShopping()
-        }
-    }*/
+
     scannedCode?.let { code ->
+        viewModel.resetProductInfoDetails()
         Toast.makeText(context, "Scanned: $code", Toast.LENGTH_SHORT).show()
         viewModel.getProductDetails(code)
         scannerViewModel.clear()
     }
-    Scaffold(
-        topBar = {
-            MyTopAppBar(
-                employeeName = employeeName.value,
-                cartCount = cartCount.value,
-                onMenuClick = { /* open drawer */ },
-                onFirstIconClick = { /* notifications */ },
-                onLogout = {onLogout()}
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            DrawerContent(
+                appMode = appMode,
+               onTransActionSelected = {
+                   scope.launch { drawerState.close() }
+               },
+                onAppModeUpdated = {appMode->
+                    scope.launch { drawerState.close() }
+                    viewModel.onAppModeChange(appMode)
+                },
+                isChecked = canShowPriceChecker.value,
+                onCheckedChange = {
+                    scope.launch { drawerState.close() }
+                    canShowPriceChecker.value = it
+                }
             )
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            PickersShoppingScreen(scannerViewModel, viewModel)
+    ) {
+        Scaffold(
+            topBar = {
+                MyTopAppBar(
+                    employeeName = employeeName.value,
+                    cartCount = cartCount.value,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    },
+                    onFirstIconClick = { /* notifications */ },
+                    onLogout = onLogout
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                PickersShoppingScreen(scannerViewModel, viewModel)
+            }
         }
     }
-
 }
+
 
 @Composable
 fun EmptyCartScreen(
@@ -968,36 +1002,6 @@ fun MyTopAppBar(
                     )
                 }
 
-                //Spacer(Modifier.width(20.dp))
-                /*Button(
-                    onClick = {
-                        if (cartCount > 0) {
-
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Your cart is empty — add a product to continue!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(start = 20.dp, end = 20.dp)
-                        .height(45.dp),
-
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(colorResource(if (cartCount > 0) R.color.colorGreen else R.color.colorIconGray))
-                ) {
-
-                    Text(
-                        text = "CHECKOUT",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-                    )
-                }*/
                 Spacer(Modifier.width(50.dp))
             }
         },
@@ -1913,6 +1917,141 @@ fun ManualBarcodeEntryDialog(
     }
 }
 
+@Composable
+fun DrawerContent(
+    appMode: AppMode,
+    onTransActionSelected: () -> Unit,
+    onAppModeUpdated: (AppMode) -> Unit,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
 
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(350.dp)
+            .background(MaterialTheme.colorScheme.surface),
+        verticalArrangement = Arrangement.Top
+    ) {
+        Spacer(Modifier.height(30.dp))
+        Image(
+            painter = painterResource(id = R.drawable.ic_merchant_logo),
+            contentDescription = "Ad Banner",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxWidth().height(70.dp)
+        )
+
+        Divider()
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onTransActionSelected() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.transaction),
+                contentDescription = "transaction",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "View Transaction",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+        Divider()
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 5.dp),
+            text = "App Mode",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        )
+        SingleSelectCheckboxes(
+            onSelectionChanged = onAppModeUpdated,
+            selected = appMode
+        )
+        Divider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+           /* Icon(
+                painter = painterResource(id = icon),
+                contentDescription = text,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )*/
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "Show Price Checker",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier.weight(1f) // 👈 pushes switch to the right
+            )
+            Switch(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange
+            )
+        }
+
+    }
+}
+@Composable
+fun SingleSelectCheckboxes(
+    options: List<Pair<AppMode, String>> = listOf(
+        AppMode.EzyCartPicker to "EzyCartPicker",
+        AppMode.EzyLite to "EzyLite"
+    ),
+    selected: AppMode = AppMode.EzyCartPicker,
+    modifier: Modifier = Modifier,
+    onSelectionChanged: (AppMode) -> Unit = {}
+) {
+    var selected = remember { mutableStateOf(selected) }
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        options.forEach { (mode, label) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable {
+                        selected.value = mode
+                        onSelectionChanged(mode)
+                    }
+                    .padding(4.dp)
+            ) {
+                Checkbox(
+                    checked = selected.value == mode,
+                    onCheckedChange = {
+                        selected.value = mode
+                        onSelectionChanged(mode)
+                    },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        checkmarkColor = Color.White
+                    )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
 
 

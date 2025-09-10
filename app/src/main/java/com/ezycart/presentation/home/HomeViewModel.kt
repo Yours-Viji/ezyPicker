@@ -56,6 +56,9 @@ class HomeViewModel @Inject constructor(
     private val _isPickerModel = MutableStateFlow<Boolean>(false)
     val isPickerModel: StateFlow<Boolean> = _isPickerModel.asStateFlow()
 
+    private val _appMode = MutableStateFlow(AppMode.EzyCartPicker)
+    val appMode: StateFlow<AppMode> = _appMode
+
     private val _employeeName = MutableStateFlow("")
     val employeeName: StateFlow<String> = _employeeName.asStateFlow()
 
@@ -68,9 +71,18 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
+            _appMode.update { savedAppMode }
             _isPickerModel.update { savedAppMode.name == AppMode.EzyCartPicker.name }
             _employeeName.update { preferencesManager.getEmployeeName() }
 
+        }
+
+    }
+
+    fun onAppModeChange(selectedAppMode:AppMode) {
+        viewModelScope.launch {
+            _isPickerModel.update {selectedAppMode.name == AppMode.EzyCartPicker.name}
+            preferencesManager.setAppMode(selectedAppMode)
         }
     }
     fun initNewShopping(){
