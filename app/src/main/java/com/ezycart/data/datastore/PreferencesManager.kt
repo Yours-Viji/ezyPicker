@@ -121,7 +121,7 @@ class PreferencesManager @Inject constructor(
         val name = dataStore.data.first()[APP_MODE] ?: AppMode.EzyCartPicker.name
         return AppMode.valueOf(name)
     }
-    suspend fun clearUserPreferences() {
+    suspend fun clearPreferences() {
         dataStore.edit { preferences ->
             preferences.clear()
         }
@@ -157,5 +157,22 @@ class PreferencesManager @Inject constructor(
         return dataStore.data.map { preferences ->
             preferences[IS_DEVICE_ACTIVATED] ?: false
         }.distinctUntilChanged()
+    }
+
+    suspend fun clearEmployeeDetails() {
+        dataStore.edit { preferences ->
+
+            preferences.remove(EMPLOYEE_EMAIL)
+            preferences.remove(EMPLOYEE_DEPARTMENT)
+            preferences.remove(X_AUTH_TOKEN)
+            preferences.remove(EMPLOYEE_PIN)
+            preferences.remove(EMPLOYEE_NAME)
+            preferences.remove(EMPLOYEE_POSITION)
+            preferences.remove(EMPLOYEE_TYPE)
+            preferences.remove(EMPLOYEE_ID)
+            preferences.remove(EMPLOYEE_STATUS)
+            preferences.remove(SHOPPING_CART_ID)
+            preferences.remove(AUTH_TOKEN)
+        }
     }
 }

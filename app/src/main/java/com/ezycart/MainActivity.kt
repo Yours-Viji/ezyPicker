@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,6 +30,7 @@ import com.ezycart.presentation.login.LoginScreen
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -125,6 +127,14 @@ class MainActivity : ComponentActivity() {
                                             // 🔹 Handle language change
                                             // Toast.makeText(this, "Language change clicked", Toast.LENGTH_SHORT).show()
                                         },
+                                        onLogout = {
+                                            lifecycleScope.launch {
+                                                splashViewModel.clearUserPreference()
+                                            }
+                                            navController.navigate("login") {
+                                                popUpTo("home") { inclusive = true } // remove home from back stack
+                                            }
+                                        }
                                         /*onLoginSuccess = {
                                             navController.navigate("home") {
                                                 popUpTo("activation") { inclusive = true }

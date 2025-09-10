@@ -98,7 +98,7 @@ fun HomeScreen(
     scannerViewModel: ScannerViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
-
+    onLogout: () -> Unit
     ) {
 
     // val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -143,7 +143,7 @@ fun HomeScreen(
                 cartCount = cartCount.value,
                 onMenuClick = { /* open drawer */ },
                 onFirstIconClick = { /* notifications */ },
-                onSecondIconClick = { /* settings */ }
+                onLogout = {onLogout()}
             )
         }
     ) { innerPadding ->
@@ -917,7 +917,7 @@ fun MyTopAppBar(
     cartCount: Int = 0,
     onMenuClick: () -> Unit,
     onFirstIconClick: () -> Unit,
-    onSecondIconClick: () -> Unit
+    onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     TopAppBar(
@@ -954,6 +954,20 @@ fun MyTopAppBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CartIconWithBadge(count = cartCount)
+                Spacer(Modifier.width(20.dp))
+                IconButton(
+                    onClick = {
+                        onLogout()
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_logout_24),
+                        contentDescription = "Logout",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
                 //Spacer(Modifier.width(20.dp))
                 /*Button(
                     onClick = {

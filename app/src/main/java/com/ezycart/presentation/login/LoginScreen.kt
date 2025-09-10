@@ -206,7 +206,7 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             //viewModel.clearpref()
-                            //scannerViewModel.onScanned("57024")
+                            scannerViewModel.onScanned("57024")
                             if (state.employeePin.length == 5) {
                                 viewModel.login()
                             } else {
