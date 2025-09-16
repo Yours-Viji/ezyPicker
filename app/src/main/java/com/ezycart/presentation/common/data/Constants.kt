@@ -22,7 +22,7 @@ object Constants {
 
     val DCM_URL = "https://ezycart-dcm.retailetics.com/ "
     //val DCM_URL = "https://192.168.10.2:3366/"
-
+const val EZY_LITE_TRANSACTION_URL="https://cms-vgo-retailetics-ops-mini-03.retailetics.com/SalesReport/customertransaction"
     val LOG_URL = "${LOGS_BASE_URL}/api/v1/log"
     val MONITOR_URL = "${LOGS_BASE_URL}/api/v1/cart-monitor"
     var REJECT_LOG_URL = "${BASE_URL}/v1/ezyCart/ai/cart/reject"

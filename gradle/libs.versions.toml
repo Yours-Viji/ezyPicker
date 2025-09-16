@@ -24,6 +24,7 @@ zxingEmbedded = "4.3.0"
 permissionsCompose = "0.0.1+4"
 coil = "2.6.0"
 lottie = "6.0.0"
+accompanist-webview = "0.34.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -65,7 +66,7 @@ permissions-compose = { group = "com.meticha", name = "permissions_compose", ver
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
-
+accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanist-webview" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

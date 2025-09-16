@@ -101,6 +101,9 @@ dependencies {
     // Lottie
     implementation(libs.lottie.compose)
 
+    //WebView
+    implementation(libs.accompanist.webview)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

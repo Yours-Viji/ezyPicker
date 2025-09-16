@@ -1,6 +1,10 @@
 package com.ezycart.presentation.home
 
+import android.annotation.SuppressLint
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -33,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
@@ -63,6 +68,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -70,6 +76,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,12 +97,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.presentation.ScannerViewModel
+import com.google.accompanist.web.rememberWebViewState
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -106,7 +115,8 @@ fun HomeScreen(
     scannerViewModel: ScannerViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onTransactionCalled: () -> Unit,
 ) {
     val context = LocalContext.current
     val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
@@ -126,6 +136,7 @@ fun HomeScreen(
             showDialog.value = true
         }
     }
+
     if (showDialog.value) {
         if (canShowPriceChecker.value){
             ProductPriceAlert(viewModel = viewModel) {
@@ -153,7 +164,11 @@ fun HomeScreen(
             DrawerContent(
                 appMode = appMode,
                onTransActionSelected = {
-                   scope.launch { drawerState.close() }
+                   scope.launch {
+                       scope.launch { drawerState.close() }
+                       onTransactionCalled()
+
+                   }
                },
                 onAppModeUpdated = {appMode->
                     scope.launch { drawerState.close() }
@@ -2055,3 +2070,62 @@ fun SingleSelectCheckboxes(
 }
 
 
+@SuppressLint("SetJavaScriptEnabled")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WebViewScreen(url: String, navController: NavController) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Sales Report") },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        AndroidView(
+            factory = { context ->
+                WebView(context).apply {
+                    webViewClient = WebViewClient()
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    loadUrl(url)
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        )
+    }
+
+    // Handle back press
+    BackPressHandler {
+        navController.popBackStack()
+    }
+}
+@Composable
+fun BackPressHandler(onBackPressed: () -> Unit) {
+    val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val currentOnBackPressed by rememberUpdatedState(onBackPressed)
+
+    DisposableEffect(backPressedDispatcher) {
+        val callback = object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                currentOnBackPressed()
+            }
+        }
+
+        backPressedDispatcher?.addCallback(callback)
+
+        onDispose {
+            callback.remove()
+        }
+    }
+}

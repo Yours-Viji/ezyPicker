@@ -15,6 +15,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -25,12 +26,16 @@ import com.ezycart.presentation.activation.ActivationScreen
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.components.CustomRationaleDialog
 import com.ezycart.presentation.common.components.GlobalLoadingOverlay
+import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.home.HomeScreen
+import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.login.LoginScreen
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
+import java.net.URLEncoder
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -134,12 +139,19 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("login") {
                                                 popUpTo("home") { inclusive = true } // remove home from back stack
                                             }
+                                        },
+                                        onTransactionCalled = {
+                                            navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
                                         }
-                                        /*onLoginSuccess = {
-                                            navController.navigate("home") {
-                                                popUpTo("activation") { inclusive = true }
-                                            }
-                                        }*/
+
+                                    )
+                                }
+                                composable("webview/{url}") { backStackEntry ->
+                                    val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
+                                    val url = URLDecoder.decode(encodedUrl, "UTF-8")
+                                    WebViewScreen(
+                                        url = url,
+                                        navController = navController
                                     )
                                 }
                             }
@@ -151,7 +163,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
+    fun NavController.navigateToWebView(url: String) {
+        try {
+            val encodedUrl = URLEncoder.encode(url, "UTF-8")
+            navigate("webview/$encodedUrl")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Fallback: navigate with empty URL or show error
+            navigate("webview/error")
+        }
+    }
 }
 
 
