@@ -1933,15 +1933,15 @@ fun DrawerContent(
             .background(MaterialTheme.colorScheme.surface),
         verticalArrangement = Arrangement.Top
     ) {
-        Spacer(Modifier.height(30.dp))
-        Image(
+        Spacer(Modifier.height(50.dp))
+       /* Image(
             painter = painterResource(id = R.drawable.ic_merchant_logo),
             contentDescription = "Ad Banner",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxWidth().height(70.dp)
         )
 
-        Divider()
+        Divider()*/
 
         Spacer(Modifier.height(16.dp))
 

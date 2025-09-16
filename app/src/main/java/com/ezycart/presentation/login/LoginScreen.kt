@@ -119,7 +119,7 @@ fun LoginScreen(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(width = 210.dp, height = 60.dp).padding(end = 10.dp)
                 )
-                Spacer(modifier = Modifier.width(30.dp))
+                /*Spacer(modifier = Modifier.width(30.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_group_arrow), // replace with ad/banner
                     contentDescription = "arrow",
@@ -132,7 +132,7 @@ fun LoginScreen(
                     contentDescription = "merchantLogo",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(width = 240.dp, height = 60.dp).padding(end = 10.dp)
-                )
+                )*/
             }
 
             // Right side: Theme + Language icons
