@@ -66,6 +66,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ezycart.R
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.presentation.ScannerViewModel
+import com.ezycart.presentation.common.components.BarcodeScannerListener
 
 @Composable
 fun LoginScreen(
@@ -77,9 +78,24 @@ fun LoginScreen(
 
 ) {
 
-    val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
+
+    // Add scanner listener to LoginScreen
+    BarcodeScannerListener(
+        onBarcodeScanned = { code ->
+            scannerViewModel.onScanned(code)
+        }
+    )
+
+    scannedCode?.let { code ->
+        if (code.isNotEmpty()) {
+            Toast.makeText(context, "Pin: $code", Toast.LENGTH_SHORT).show()
+            viewModel.login(viewModel.extractEmployeePin(code))
+            scannerViewModel.clear()
+        }
+    }
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
             onLoginSuccess()
@@ -90,13 +106,7 @@ fun LoginScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 🔹 Header Row
-        scannedCode?.let {code->
-            Toast.makeText(context,"Scanned: $code",Toast.LENGTH_SHORT).show()
-           // viewModel.onEmployeePinChange(code)
-            viewModel.login(code)
-            scannerViewModel.clear()
-        }
+
         Spacer(modifier = Modifier.height(20.dp))
         Row (
             modifier = Modifier
@@ -206,7 +216,7 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             //viewModel.clearpref()
-                            scannerViewModel.onScanned("57024")
+                            //scannerViewModel.onScanned("57024")
                             if (state.employeePin.length == 5) {
                                 viewModel.login()
                             } else {

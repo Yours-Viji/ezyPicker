@@ -74,15 +74,15 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val splashViewModel: SplashViewModel = hiltViewModel()
-                    val scannerViewModel: ScannerViewModel = hiltViewModel()
+                    //val scannerViewModel: ScannerViewModel = hiltViewModel()
                     val isActivated = splashViewModel.isDeviceActivated.collectAsState()
                     splashViewModel.getDeviceId(this)
 
-                    BarcodeScannerListener(
+                   /* BarcodeScannerListener(
                         onBarcodeScanned = { code ->
                             scannerViewModel.onScanned(code)
                         }
-                    )
+                    )*/
 
                     when (isActivated.value) {
                         null -> {

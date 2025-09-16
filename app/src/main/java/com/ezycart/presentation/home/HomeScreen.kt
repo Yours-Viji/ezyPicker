@@ -104,6 +104,7 @@ import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.presentation.ScannerViewModel
+import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.google.accompanist.web.rememberWebViewState
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -131,6 +132,21 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var canShowPriceChecker = remember { mutableStateOf(true) }
     val appMode by viewModel.appMode.collectAsState()
+    BarcodeScannerListener(
+        onBarcodeScanned = { code ->
+            scannerViewModel.onScanned(code)
+        }
+    )
+
+    scannedCode?.let { code ->
+        if (code.isNotEmpty()){
+            viewModel.resetProductInfoDetails()
+            Toast.makeText(context, "SKU: $code", Toast.LENGTH_SHORT).show()
+            viewModel.getProductDetails(code)
+            scannerViewModel.clear()
+        }
+    }
+
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
             showDialog.value = true
@@ -151,12 +167,6 @@ fun HomeScreen(
         viewModel.initNewShopping()
     }
 
-    scannedCode?.let { code ->
-        viewModel.resetProductInfoDetails()
-        Toast.makeText(context, "Scanned: $code", Toast.LENGTH_SHORT).show()
-        viewModel.getProductDetails(code)
-        scannerViewModel.clear()
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

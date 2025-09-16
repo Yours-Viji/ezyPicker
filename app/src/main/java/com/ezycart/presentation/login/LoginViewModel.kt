@@ -48,7 +48,15 @@ class LoginViewModel @Inject constructor(
         _stateFlow.value = _stateFlow.value.copy(employeePin = employeeCode)
     }
 
-
+    fun extractEmployeePin(scanned: String): String {
+        if (scanned.isEmpty()) return ""
+        val afterColon = scanned.substringAfter(':', "")
+        return if (afterColon.all { it.isDigit() } && afterColon.isNotEmpty()) {
+            afterColon
+        } else {
+            Regex("\\d+").find(scanned)!!.value
+        }
+    }
     fun login(pin: String = _stateFlow.value.employeePin) {
         loadingManager.show()
         viewModelScope.launch {
