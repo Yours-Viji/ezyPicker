@@ -21,8 +21,9 @@ object Constants {
     const val OTP_BASE_URL = "https://otp-retailetics-ops01.retailetics.com"
 
     val DCM_URL = "https://ezycart-dcm.retailetics.com/ "
+
     //val DCM_URL = "https://192.168.10.2:3366/"
-const val EZY_LITE_TRANSACTION_URL="https://cms-vgo-retailetics-ops-mini-03.retailetics.com/SalesReport/customertransaction"
+    var EZY_LITE_TRANSACTION_URL = "${BASE_URL}/ezycart/lite-transactions/11/19"
     val LOG_URL = "${LOGS_BASE_URL}/api/v1/log"
     val MONITOR_URL = "${LOGS_BASE_URL}/api/v1/cart-monitor"
     var REJECT_LOG_URL = "${BASE_URL}/v1/ezyCart/ai/cart/reject"
@@ -32,7 +33,6 @@ const val EZY_LITE_TRANSACTION_URL="https://cms-vgo-retailetics-ops-mini-03.reta
     const val GET_USER_SHOPPING_LIST_API = "${EZY_LIST_BASE_URL}/ezyList/mylists"
 
     const val REVIEW_PAYMENT_API = "/v1/ezyCart/cart/review/"
-
 
 
     const val CONTENT_TYPE = "Content-Type"
@@ -79,6 +79,6 @@ const val EZY_LITE_TRANSACTION_URL="https://cms-vgo-retailetics-ops-mini-03.reta
 
 
     var deviceId = ""
-    var employeeToken=""
-    var jwtToken=""
+    var employeeToken = ""
+    var jwtToken = ""
 }
