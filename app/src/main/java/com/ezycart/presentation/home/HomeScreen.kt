@@ -1,6 +1,7 @@
 package com.ezycart.presentation.home
 
 import android.annotation.SuppressLint
+import android.view.KeyEvent
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -81,6 +82,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
@@ -90,6 +94,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -113,6 +118,9 @@ import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.google.accompanist.web.rememberWebViewState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -120,15 +128,13 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    //scannerViewModel: ScannerViewModel = hiltViewModel(),
+
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit,
 ) {
-    val context = LocalContext.current
-   // val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
-   // val isActivated = viewModel.cartId.collectAsState()
+
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
     val employeeName = viewModel.employeeName.collectAsState()
@@ -143,22 +149,7 @@ fun HomeScreen(
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
     var showQrDialog = remember { mutableStateOf(false) }
-
-
-   /* BarcodeScannerListener(
-        onBarcodeScanned = { code ->
-            scannerViewModel.onScanned(code)
-        }
-    )
-
-    scannedCode?.let { code ->
-        if (code.isNotEmpty()){
-            viewModel.resetProductInfoDetails()
-            Toast.makeText(context, "SKU: $code", Toast.LENGTH_SHORT).show()
-            viewModel.getProductDetails(code)
-            scannerViewModel.clear()
-        }
-    }*/
+    val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
@@ -184,80 +175,115 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
         viewModel.initNewShopping()
     }
 
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            DrawerContent(
-                appMode = appMode,
-               onTransActionSelected = {
-                   scope.launch {
-                       scope.launch { drawerState.close() }
-                       onTransactionCalled()
-
-                   }
-               },
-                onAppModeUpdated = {appMode->
-                    scope.launch { drawerState.close() }
-                    viewModel.onAppModeChange(appMode)
-                },
-                isChecked = canShowPriceChecker.value,
-                onCheckedChange = {
-                    scope.launch { drawerState.close() }
-                    canShowPriceChecker.value = it
-                }
-            )
-        },
-        modifier = Modifier.onKeyEvent { keyEvent ->
-            if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
-                when (val key = keyEvent.key) {
-                    androidx.compose.ui.input.key.Key.Enter -> {
-                        if (scanBuffer.value.isNotBlank()) {
-                            viewModel.resetProductInfoDetails()
-                           // Toast.makeText(context, "SKU: ${scanBuffer.value}", Toast.LENGTH_SHORT).show()
-                            viewModel.getProductDetails(scanBuffer.value)
-                            scanBuffer.value = ""
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusTarget()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                    when (keyEvent.key) {
+                        androidx.compose.ui.input.key.Key.Enter -> {
+                            if (scanBuffer.value.isNotBlank()) {
+                                viewModel.resetProductInfoDetails()
+                                viewModel.getProductDetails(scanBuffer.value)
+                                scanBuffer.value = ""
+                            }
+                            true
                         }
-                        true
-                    }
-                    else -> {
-                        val c = keyEvent.utf16CodePoint.toChar()
-                        if (c.isLetterOrDigit()) {
-                            scanBuffer.value += c
+                        else -> {
+                            val c = keyEvent.utf16CodePoint.toChar()
+                            if (c.isLetterOrDigit()) {
+                                scanBuffer.value += c
+                            }
+                            false
                         }
-                        false
                     }
-                }
-            } else {
-                false
+                } else false
             }
-        }
     ) {
-        Scaffold(
-            topBar = {
-                MyTopAppBar(
-                    employeeName = employeeName.value,
-                    cartCount = cartCount.value,
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                DrawerContent(
+                    appMode = appMode,
+                    onTransActionSelected = {
+                        scope.launch {
+                            scope.launch { drawerState.close() }
+                            onTransactionCalled()
+
+                        }
                     },
-                    onFirstIconClick = { /* notifications */ },
-                    onLogout = onLogout
+                    onAppModeUpdated = { appMode ->
+                        scope.launch { drawerState.close() }
+                        viewModel.onAppModeChange(appMode)
+                    },
+                    isChecked = canShowPriceChecker.value,
+                    onCheckedChange = {
+                        scope.launch { drawerState.close() }
+                        canShowPriceChecker.value = it
+                    }
                 )
             }
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                PickersShoppingScreen(viewModel, onQrPaymentClick = {
-                    showQrDialog.value=true
-                })
+        ) {
+            Scaffold(
+                topBar = {
+                    MyTopAppBar(
+                        employeeName = employeeName.value,
+                        cartCount = cartCount.value,
+                        onMenuClick = {
+                            scope.launch { drawerState.open() }
+                        },
+                        onFirstIconClick = { /* notifications */ },
+                        onLogout = onLogout
+                    )
+                }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val localView = LocalView.current
+                   /* Button(
+                        onClick = {
+                            // Mock scanner input
+                            scanBuffer.value = "6936489101973"
+
+                            // Request focus and dispatch with delay
+                            focusRequester.requestFocus()
+
+                            // Use coroutine to ensure proper timing
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(50) // Small delay to ensure focus is acquired
+
+                                val mockKeyEvent = android.view.KeyEvent(
+                                    android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
+                                    android.view.KeyEvent.KEYCODE_ENTER
+                                )
+                                localView.dispatchKeyEvent(mockKeyEvent)
+
+                                // Also send ACTION_UP
+                                val upEvent = android.view.KeyEvent(
+                                    android.view.KeyEvent.ACTION_UP,
+                                    android.view.KeyEvent.KEYCODE_ENTER
+                                )
+                                localView.dispatchKeyEvent(upEvent)
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.Center)
+                    ) {
+                        Text("Mock Enter Key")
+                    }*/
+                    PickersShoppingScreen(viewModel, onQrPaymentClick = {
+                        showQrDialog.value = true
+                    })
+                }
             }
         }
     }

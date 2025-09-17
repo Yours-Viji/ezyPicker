@@ -75,7 +75,6 @@ import com.ezycart.presentation.common.components.BarcodeScannerListener
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
-    scannerViewModel: ScannerViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
     onLoginSuccess: () -> Unit,
@@ -84,25 +83,9 @@ fun LoginScreen(
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
-   // val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
 
-
-    // --- Local state for scanning ---
     var scanBuffer = remember { mutableStateOf("") }
-    // Add scanner listener to LoginScreen
-   /* BarcodeScannerListener(
-        onBarcodeScanned = { code ->
-            scannerViewModel.onScanned(code)
-        }
-    )
 
-    scannedCode?.let { code ->
-        if (code.isNotEmpty()) {
-            Toast.makeText(context, "Pin: $code", Toast.LENGTH_SHORT).show()
-            viewModel.login(viewModel.extractEmployeePin(code))
-            scannerViewModel.clear()
-        }
-    }*/
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
             onLoginSuccess()
