@@ -38,6 +38,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
@@ -82,6 +83,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
@@ -108,6 +110,7 @@ import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.presentation.ScannerViewModel
+import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.google.accompanist.web.rememberWebViewState
 import kotlinx.coroutines.launch
@@ -125,18 +128,23 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
    // val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
-    val isActivated = viewModel.cartId.collectAsState()
+   // val isActivated = viewModel.cartId.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
     val employeeName = viewModel.employeeName.collectAsState()
     val priceInfo by viewModel.priceDetails.collectAsState()
     val productInfo by viewModel.productInfo.collectAsState()
+    val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var canShowPriceChecker = remember { mutableStateOf(true) }
     val appMode by viewModel.appMode.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
+    // Correct way to declare the state
+    var showQrDialog = remember { mutableStateOf(false) }
+
+
    /* BarcodeScannerListener(
         onBarcodeScanned = { code ->
             scannerViewModel.onScanned(code)
@@ -157,7 +165,14 @@ fun HomeScreen(
             showDialog.value = true
         }
     }
-
+    if (showQrDialog.value) {
+      val finalAmount= shoppingCartInfo.value?.finalAmount ?: 0.0
+        QrPaymentAlert(
+            amount = "$finalAmount",
+            qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
+            onDismiss = { showQrDialog.value = false }
+        )
+    }
     if (showDialog.value) {
         if (canShowPriceChecker.value){
             ProductPriceAlert(viewModel = viewModel) {
@@ -202,7 +217,7 @@ fun HomeScreen(
                     androidx.compose.ui.input.key.Key.Enter -> {
                         if (scanBuffer.value.isNotBlank()) {
                             viewModel.resetProductInfoDetails()
-                            Toast.makeText(context, "SKU: ${scanBuffer.value}", Toast.LENGTH_SHORT).show()
+                           // Toast.makeText(context, "SKU: ${scanBuffer.value}", Toast.LENGTH_SHORT).show()
                             viewModel.getProductDetails(scanBuffer.value)
                             scanBuffer.value = ""
                         }
@@ -240,7 +255,9 @@ fun HomeScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                PickersShoppingScreen(viewModel)
+                PickersShoppingScreen(viewModel, onQrPaymentClick = {
+                    showQrDialog.value=true
+                })
             }
         }
     }
@@ -300,7 +317,7 @@ fun EmptyCartScreen(
 }
 
 @Composable
-fun PickersShoppingScreen(viewModel: HomeViewModel) {
+fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit) {
     val showScanner = remember { mutableStateOf(false) }
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
@@ -415,7 +432,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel) {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    CheckoutSummaryScreen(shoppingCartInfo)
+                    CheckoutSummaryScreen(shoppingCartInfo,onQrPaymentClick={onQrPaymentClick()})
                 }
             }
         }
@@ -453,7 +470,8 @@ fun PickersShoppingScreen(viewModel: HomeViewModel) {
 }
 
 @Composable
-fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>) {
+fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaymentClick: () -> Unit) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -573,7 +591,7 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>) {
             Spacer(modifier = Modifier.height(15.dp))
             Button(
                 onClick = {
-
+                    onQrPaymentClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2169,6 +2187,68 @@ fun BackPressHandler(onBackPressed: () -> Unit) {
 
         onDispose {
             callback.remove()
+        }
+    }
+}
+
+@Composable
+fun QrPaymentAlert(
+    amount: String,
+    qrPainter: Painter, // QR code image painter
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .background(Color.White, shape = RoundedCornerShape(16.dp))
+                .padding(16.dp)
+        ) {
+            // Top-right close button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = "Close",
+                    tint = Color.Black
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center), // keep column centered
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.id_duit_now_logo),
+                    contentDescription = "Ad Banner",
+                    modifier = Modifier.size(80.dp)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                // QR Code Image
+                Image(
+                    painter = qrPainter,
+                    contentDescription = "QR Code",
+                    modifier = Modifier.size(200.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Amount
+                Text(
+                    text = "RM $amount",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
         }
     }
 }

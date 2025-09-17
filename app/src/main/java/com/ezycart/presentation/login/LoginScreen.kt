@@ -117,7 +117,7 @@ fun LoginScreen(
                     when (val key = keyEvent.key) {
                         androidx.compose.ui.input.key.Key.Enter -> {
                             if (scanBuffer.value.isNotBlank()) {
-                                Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
+                                //Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
                                 viewModel.login(viewModel.extractEmployeePin(scanBuffer.value))
                                 scanBuffer.value = "" // reset after processing
                             }
