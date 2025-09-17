@@ -1,11 +1,22 @@
 package com.ezycart.presentation.home
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.util.Log
+import android.util.Size
 import android.view.KeyEvent
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -85,6 +96,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
@@ -106,7 +118,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -118,6 +133,8 @@ import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.google.accompanist.web.rememberWebViewState
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1313,53 +1330,152 @@ fun ProductPickList(
     }
 }
 
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
 fun BarcodeScannerDialog(
     onDismiss: () -> Unit,
     onBarcodeScanned: (String) -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var previewView = remember { mutableStateOf<PreviewView?>(null) }
+
+    Dialog(onDismissRequest = {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            cameraProvider.unbindAll()
+        }, ContextCompat.getMainExecutor(context))
+        onDismiss()
+    }) {
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = Color(0xFFE3F2FD),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(16.dp)
             ) {
-                // Camera Preview
-                AndroidView(
+
+                // Preview container: clipped rounded corners + fade overlays
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black),
-                    factory = { context ->
-                        val barcodeView =
-                            com.journeyapps.barcodescanner.CompoundBarcodeView(context).apply {
-                                decodeContinuous(object :
-                                    com.journeyapps.barcodescanner.BarcodeCallback {
-                                    override fun barcodeResult(result: com.journeyapps.barcodescanner.BarcodeResult?) {
-                                        result?.text?.let { barcode ->
-                                            onBarcodeScanned(barcode)
-                                        }
+                        .height(330.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Black)
+                ) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { ctx ->
+                            PreviewView(ctx).also { pv ->
+                                // keep your reference assignment intact
+                                previewView.value = pv
+
+                                val cameraProviderFuture =
+                                    ProcessCameraProvider.getInstance(ctx)
+
+                                cameraProviderFuture.addListener({
+                                    val cameraProvider = cameraProviderFuture.get()
+                                    val preview = Preview.Builder().build().also {
+                                        it.setSurfaceProvider(pv.surfaceProvider)
                                     }
 
-                                    override fun possibleResultPoints(resultPoints: MutableList<com.google.zxing.ResultPoint>?) {}
-                                })
-                            }
-                        barcodeView.resume()
-                        barcodeView
-                    }
-                )
+                                    val scanner = BarcodeScanning.getClient()
+                                    val analysis = ImageAnalysis.Builder()
+                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        .build()
+                                        .also {
+                                            it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
+                                                val mediaImage = imageProxy.image
+                                                if (mediaImage != null) {
+                                                    val image = InputImage.fromMediaImage(
+                                                        mediaImage,
+                                                        imageProxy.imageInfo.rotationDegrees
+                                                    )
+                                                    scanner.process(image)
+                                                        .addOnSuccessListener { barcodes ->
+                                                            barcodes.firstOrNull()?.rawValue?.let { code ->
+                                                                onBarcodeScanned(code)
+                                                            }
+                                                        }
+                                                        .addOnCompleteListener {
+                                                            imageProxy.close()
+                                                        }
+                                                } else {
+                                                    imageProxy.close()
+                                                }
+                                            }
+                                        }
 
+                                    cameraProvider.unbindAll()
+                                    cameraProvider.bindToLifecycle(
+                                        lifecycleOwner,
+                                        CameraSelector.DEFAULT_BACK_CAMERA,
+                                        preview,
+                                        analysis
+                                    )
+                                }, ContextCompat.getMainExecutor(ctx))
+                            }
+                        }
+                    )
+
+                    // subtle top fade
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .align(Alignment.TopCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Black.copy(alpha = 0.52f), Color.Transparent)
+                                )
+                            )
+                    )
+
+                    // subtle bottom fade
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.52f))
+                                )
+                            )
+                    )
+
+                    // optional center guideline (thin translucent line)
+                    Box(
+                        modifier = Modifier
+                            .height(2.dp)
+                            .fillMaxWidth(0.8f)
+                            .align(Alignment.Center)
+                            .background(Color.White.copy(alpha = 0.24f))
+                    )
+                }
+
+                // add a bit more spacing so the button sits clearly below preview
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Close button (red)
+                // Close button (keeps same release logic)
                 Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            cameraProvider.unbindAll()
+                        }, ContextCompat.getMainExecutor(context))
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     shape = RoundedCornerShape(50)
                 ) {
@@ -1369,6 +1485,7 @@ fun BarcodeScannerDialog(
         }
     }
 }
+
 
 @Composable
 fun ProductPriceAlert(
