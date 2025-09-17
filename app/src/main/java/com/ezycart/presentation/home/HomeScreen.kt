@@ -82,6 +82,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -113,14 +117,14 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    scannerViewModel: ScannerViewModel = hiltViewModel(),
+    //scannerViewModel: ScannerViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit,
 ) {
     val context = LocalContext.current
-    val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
+   // val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
     val isActivated = viewModel.cartId.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
@@ -132,7 +136,8 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var canShowPriceChecker = remember { mutableStateOf(true) }
     val appMode by viewModel.appMode.collectAsState()
-    BarcodeScannerListener(
+    var scanBuffer = remember { mutableStateOf("") }
+   /* BarcodeScannerListener(
         onBarcodeScanned = { code ->
             scannerViewModel.onScanned(code)
         }
@@ -145,7 +150,7 @@ fun HomeScreen(
             viewModel.getProductDetails(code)
             scannerViewModel.clear()
         }
-    }
+    }*/
 
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
@@ -190,6 +195,30 @@ fun HomeScreen(
                     canShowPriceChecker.value = it
                 }
             )
+        },
+        modifier = Modifier.onKeyEvent { keyEvent ->
+            if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                when (val key = keyEvent.key) {
+                    androidx.compose.ui.input.key.Key.Enter -> {
+                        if (scanBuffer.value.isNotBlank()) {
+                            viewModel.resetProductInfoDetails()
+                            Toast.makeText(context, "SKU: ${scanBuffer.value}", Toast.LENGTH_SHORT).show()
+                            viewModel.getProductDetails(scanBuffer.value)
+                            scanBuffer.value = ""
+                        }
+                        true
+                    }
+                    else -> {
+                        val c = keyEvent.utf16CodePoint.toChar()
+                        if (c.isLetterOrDigit()) {
+                            scanBuffer.value += c
+                        }
+                        false
+                    }
+                }
+            } else {
+                false
+            }
         }
     ) {
         Scaffold(
@@ -211,7 +240,7 @@ fun HomeScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                PickersShoppingScreen(scannerViewModel, viewModel)
+                PickersShoppingScreen(viewModel)
             }
         }
     }
@@ -220,7 +249,7 @@ fun HomeScreen(
 
 @Composable
 fun EmptyCartScreen(
-    isPickerModel: Boolean, scannerViewModel: ScannerViewModel,
+    isPickerModel: Boolean,
     onScanBarcode: () -> Unit,
     onEnterBarcodeManually: () -> Unit
 ) {
@@ -271,7 +300,7 @@ fun EmptyCartScreen(
 }
 
 @Composable
-fun PickersShoppingScreen(scannerViewModel: ScannerViewModel, viewModel: HomeViewModel) {
+fun PickersShoppingScreen(viewModel: HomeViewModel) {
     val showScanner = remember { mutableStateOf(false) }
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
@@ -349,7 +378,7 @@ fun PickersShoppingScreen(scannerViewModel: ScannerViewModel, viewModel: HomeVie
             if (cartDataList.value.isEmpty()) {
                 EmptyCartScreen(
                     isPickerModel.value,
-                    scannerViewModel,
+                    //scannerViewModel,
                     onScanBarcode = { showScanner.value = true },
                     onEnterBarcodeManually = {showManualBarCode.value = true})
             } else {
@@ -397,7 +426,9 @@ fun PickersShoppingScreen(scannerViewModel: ScannerViewModel, viewModel: HomeVie
             onDismiss = { showScanner.value = false },
             onBarcodeScanned = {
                 scannedCode.value = it
-                scannerViewModel.onScanned(scannedCode.value.toString())
+                viewModel.resetProductInfoDetails()
+                viewModel.getProductDetails(scannedCode.value.toString())
+               // scannerViewModel.onScanned(scannedCode.value.toString())
                 showScanner.value = false
             }
         )
@@ -405,7 +436,9 @@ fun PickersShoppingScreen(scannerViewModel: ScannerViewModel, viewModel: HomeVie
     if (showManualBarCode.value) {
         ManualBarcodeEntryDialog(
             onProceed = { barcode ->
-                scannerViewModel.onScanned(barcode)
+                viewModel.resetProductInfoDetails()
+                viewModel.getProductDetails(barcode)
+               // scannerViewModel.onScanned(barcode)
                 showManualBarCode.value=false
             },
             onCancel = {
@@ -913,10 +946,10 @@ fun CartItemCard(
                 modifier = Modifier
                     .size(45.dp)
                     .padding(start = 4.dp)
-                .clickable {
-                    selectedCartItem.value = productInfo
-                    showDeleteDialog.value = true
-            }
+                    .clickable {
+                        selectedCartItem.value = productInfo
+                        showDeleteDialog.value = true
+                    }
             )
             Spacer(Modifier.width(5.dp))
             // Edit icon

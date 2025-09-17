@@ -50,6 +50,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,10 +84,13 @@ fun LoginScreen(
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
+   // val scannedCode by scannerViewModel.scannedCode.collectAsStateWithLifecycle()
 
+
+    // --- Local state for scanning ---
+    var scanBuffer = remember { mutableStateOf("") }
     // Add scanner listener to LoginScreen
-    BarcodeScannerListener(
+   /* BarcodeScannerListener(
         onBarcodeScanned = { code ->
             scannerViewModel.onScanned(code)
         }
@@ -95,7 +102,7 @@ fun LoginScreen(
             viewModel.login(viewModel.extractEmployeePin(code))
             scannerViewModel.clear()
         }
-    }
+    }*/
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
             onLoginSuccess()
@@ -105,6 +112,30 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                    when (val key = keyEvent.key) {
+                        androidx.compose.ui.input.key.Key.Enter -> {
+                            if (scanBuffer.value.isNotBlank()) {
+                                Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
+                                viewModel.login(viewModel.extractEmployeePin(scanBuffer.value))
+                                scanBuffer.value = "" // reset after processing
+                            }
+                            true
+                        }
+                        else -> {
+                            // Append normal characters
+                            val c = keyEvent.utf16CodePoint.toChar()
+                            if (c.isLetterOrDigit()) {
+                                scanBuffer.value += c
+                            }
+                            false
+                        }
+                    }
+                } else {
+                    false
+                }
+            }
     ) {
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -196,13 +227,13 @@ fun LoginScreen(
                 Column(verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(fontWeight = FontWeight.Bold,
-                        text = "Sign In With Employee Code",
+                        text = "Sign In With Employee PIN",
                         fontSize = 28.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     Text(
-                        text = "Enter Your Employee Code Here",
+                        text = "Enter Your Employee Pin Here",
                         fontSize = 22.sp,
                         color = Color.Gray
                     )
@@ -248,7 +279,7 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(fontWeight = FontWeight.Bold,
-                        text = "Scan your employee QR to Sing In",
+                        text = "Scan your employee Barcode to Sing In",
                         fontSize = 25.sp,
                         color = MaterialTheme.colorScheme.primary
 
