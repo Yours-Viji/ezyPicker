@@ -141,6 +141,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+@SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -174,12 +175,14 @@ fun HomeScreen(
         }
     }
     if (showQrDialog.value) {
-      val finalAmount= shoppingCartInfo.value?.finalAmount ?: 0.0
-        QrPaymentAlert(
-            amount = "$finalAmount",
-            qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
-            onDismiss = { showQrDialog.value = false }
-        )
+        shoppingCartInfo.value.let {
+            val finalAmount= it?.finalAmount ?: 0.0
+            QrPaymentAlert(
+                amount = "$finalAmount",
+                qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
+                onDismiss = { showQrDialog.value = false }
+            )
+        }
     }
     if (showDialog.value) {
         if (canShowPriceChecker.value){
@@ -1494,8 +1497,10 @@ fun ProductPriceAlert(
 ) {
     val priceInfo by viewModel.priceDetails.collectAsState()
     val productInfo by viewModel.productInfo.collectAsState()
-
+    var isAdding = remember { mutableStateOf(false) }
     if (productInfo != null && priceInfo != null) {
+        var lastClickTime = 0L
+        val clickDebounceTime = 300L
         AlertDialog(
             onDismissRequest = { onDismiss() },
             confirmButton = {
@@ -1610,8 +1615,15 @@ fun ProductPriceAlert(
                         // Add To Cart Button (Green background)
                         Button(
                             onClick = {
-                                viewModel.addProductToShoppingCart(productInfo!!.barcode, 1)
-                                onDismiss()
+                                if (!isAdding.value) {
+                                    isAdding.value = true
+                                    val currentTime = System.currentTimeMillis()
+                                    if (currentTime - lastClickTime > clickDebounceTime) {
+                                        lastClickTime = currentTime
+                                        viewModel.addProductToShoppingCart(productInfo!!.barcode, 1)
+                                        onDismiss()
+                                    }
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF4CAF50),
