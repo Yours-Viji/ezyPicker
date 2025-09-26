@@ -190,9 +190,12 @@ fun HomeScreen(
             ProductPriceAlert(viewModel = viewModel) {
                 showDialog.value = false
             }
+            focusRequester.requestFocus()
         }else{
             productInfo?.let { viewModel.addProductToShoppingCart(it.barcode, 1) }
+            focusRequester.requestFocus()
         }
+        focusRequester.requestFocus()
     }
 
     LaunchedEffect(Unit) {
@@ -236,16 +239,24 @@ fun HomeScreen(
                         scope.launch {
                             scope.launch { drawerState.close() }
                             onTransactionCalled()
-
+                            delay(100)
+                            focusRequester.requestFocus()
                         }
                     },
                     onAppModeUpdated = { appMode ->
-                        scope.launch { drawerState.close() }
+                        scope.launch { drawerState.close()
+                            delay(100)
+                            focusRequester.requestFocus()
+                        }
                         viewModel.onAppModeChange(appMode)
+
                     },
                     isChecked = canShowPriceChecker.value,
                     onCheckedChange = {
-                        scope.launch { drawerState.close() }
+                        scope.launch { drawerState.close()
+                            delay(100)
+                            focusRequester.requestFocus()
+                        }
                         canShowPriceChecker.value = it
                     }
                 )
@@ -267,7 +278,9 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
+                        .padding(innerPadding)
+                        .focusRequester(focusRequester) // Add focus requester here too
+                        .focusTarget(),
                     contentAlignment = Alignment.Center
                 ) {
                     val localView = LocalView.current
