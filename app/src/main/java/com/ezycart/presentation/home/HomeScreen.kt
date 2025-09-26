@@ -132,6 +132,7 @@ import com.ezycart.domain.model.AppMode
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
+import com.ezycart.presentation.common.data.Constants
 import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -525,33 +526,33 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
     ) {
         val paymentSummary = shoppingCartInfo.value
         Column {
-            BillRow("Sub Total", "RM ${paymentSummary?.totalPrice ?: 0.0}", color = Color.Black)
+            BillRow("Sub Total", "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}", color = Color.Black)
             BillRow(
                 "Promo Discount",
-                "RM ${paymentSummary?.promotionSave ?: 0.0}",
+                "${Constants.currencySymbol} ${paymentSummary?.promotionSave ?: 0.0}",
                 color = Color.Black
             )
             BillRow(
                 "Special Discount",
-                "RM ${paymentSummary?.totalDiscount ?: 0.0}",
+                "${Constants.currencySymbol} ${paymentSummary?.totalDiscount ?: 0.0}",
                 color = Color.Black
             )
             BillRow(
                 "Coupon Discount",
-                "RM ${paymentSummary?.couponAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${paymentSummary?.couponAmount ?: 0.0}",
                 color = Color.Black
             )
             BillRow(
                 "Voucher Discount",
-                "RM ${paymentSummary?.vourcherAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${paymentSummary?.vourcherAmount ?: 0.0}",
                 color = Color.Black
             )
-            BillRow("Tax", "RM ${paymentSummary?.totalTax ?: 0.0}", color = Color.Black)
+            BillRow("Tax", "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}", color = Color.Black)
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Spacer(modifier = Modifier.height(5.dp))
             BillRow(
                 "Grand Total",
-                "RM ${paymentSummary?.finalAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
                 isBold = true,
                 color = Color.Black
             )
@@ -602,7 +603,7 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
             AnimatedPayableText()
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "RM ${paymentSummary?.finalAmount ?: 0.0}",
+                text = "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 40.sp,
@@ -865,8 +866,8 @@ fun CartItemCard(
         DeleteProductDialog(
             productName = selectedCartItem.value?.productName ?: "",
             productCode = selectedCartItem.value?.barcode ?: "",
-            oldPrice = "RM ${selectedCartItem.value?.originalPrice ?: 0.0}",
-            newPrice = "RM ${selectedCartItem.value?.finalPrice ?: 0.0}",
+            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
+            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
             imageRes = selectedCartItem.value?.imageUrl ?: "",
             onRemove = {
                 // handle remove
@@ -880,8 +881,8 @@ fun CartItemCard(
         EditProductDialog (
             productName = selectedCartItem.value?.productName ?: "",
             productCode = selectedCartItem.value?.barcode ?: "",
-            oldPrice = "RM ${selectedCartItem.value?.originalPrice ?: 0.0}",
-            newPrice = "RM ${selectedCartItem.value?.finalPrice ?: 0.0}",
+            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
+            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
             imageRes = selectedCartItem.value?.imageUrl ?: "",
             currentQuantity = selectedCartItem.value?.quantity ?: 1,
             onEdit = {updatedQuantity->
@@ -980,13 +981,13 @@ fun CartItemCard(
             ) {
 
                 Text(
-                    text = "${productInfo.displayQty} x RM ${"%.2f".format(productInfo.unitPrice)}",
+                    text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${"%.2f".format(productInfo.unitPrice)}",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.Gray
                 )
                 if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
                     Text(
-                        text = "RM ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                        text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         textDecoration = TextDecoration.LineThrough,
 
@@ -994,7 +995,7 @@ fun CartItemCard(
                 }
 
                 Text(
-                    text = "RM ${"%.2f".format(productInfo.finalPrice)}",
+                    text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = colorResource(R.color.colorPrimary)

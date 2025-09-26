@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dagger.hilt)
     alias(libs.plugins.kotlin.kapt)
-    // REMOVE: alias(libs.plugins.kotlin.compose) - this doesn't exist
 }
 
 android {
@@ -23,15 +22,56 @@ android {
         }
     }
 
+    // Define flavor dimensions
+    flavorDimensions += listOf("country")
+
+    // Configure product flavors
+    productFlavors {
+        create("malaysia") {
+            dimension = "country"
+            applicationIdSuffix = ".my"
+            versionNameSuffix = "-my"
+            // Set default values that can be overridden in build types
+            buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
+            buildConfigField("String", "CURRENCY_SYMBOL", "\"RM\"")
+        }
+
+        create("saudi") {
+            dimension = "country"
+            applicationIdSuffix = ".sa"
+            versionNameSuffix = "-sa"
+            buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
+            buildConfigField("String", "CURRENCY_SYMBOL", "\"SAR\"")
+        }
+    }
+
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            // You can override values for debug builds if needed
+            buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
+        }
+        release {
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
+    // This will create variants like: malaysiaDebug, malaysiaRelease, saudiDebug, saudiRelease
+    variantFilter {
+        if (name == "malaysiaDebug" || name == "saudiDebug" ||
+            name == "malaysiaRelease" || name == "saudiRelease") {
+            ignore = false
+        } else {
+            ignore = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -44,9 +84,10 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // Enable build config generation
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15" // Make sure this matches your Compose version
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
         resources {
@@ -56,6 +97,7 @@ android {
 }
 
 dependencies {
+    // ... your existing dependencies remain the same
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -117,7 +159,4 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
-    /*androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)*/
 }
