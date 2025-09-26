@@ -34,6 +34,8 @@ android {
             // Set default values that can be overridden in build types
             buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"RM\"")
+            buildConfigField("String", "ACTIVATION_CODE", "\"ALpxvmI0111\"")
+
         }
 
         create("saudi") {
@@ -42,6 +44,7 @@ android {
             versionNameSuffix = "-sa"
             buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"SAR\"")
+            buildConfigField("String", "ACTIVATION_CODE", "\"ALpxvcc0022\"")
         }
     }
 

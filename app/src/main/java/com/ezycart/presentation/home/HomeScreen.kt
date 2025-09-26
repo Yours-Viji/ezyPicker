@@ -186,14 +186,20 @@ fun HomeScreen(
         }
     }
     if (showDialog.value) {
+        var lastClickTime = 0L
+        val clickDebounceTime = 300L
         if (canShowPriceChecker.value){
             ProductPriceAlert(viewModel = viewModel) {
                 showDialog.value = false
             }
             focusRequester.requestFocus()
         }else{
-            productInfo?.let { viewModel.addProductToShoppingCart(it.barcode, 1) }
-            focusRequester.requestFocus()
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastClickTime > clickDebounceTime) {
+                lastClickTime = currentTime
+                productInfo?.let { viewModel.addProductToShoppingCart(it.barcode, 1) }
+                focusRequester.requestFocus()
+            }
         }
         focusRequester.requestFocus()
     }
@@ -1355,8 +1361,14 @@ fun BarcodeScannerDialog(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
 
     var previewView = remember { mutableStateOf<PreviewView?>(null) }
+
+    var isProcessing = remember { mutableStateOf(false) }
+    var lastProcessedBarcode = remember { mutableStateOf("") }
+    var lastProcessedTime = remember { mutableStateOf(0L) }
+    val debounceTime = 1500L // 1.5 seconds between scans
 
     Dialog(onDismissRequest = {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -1378,7 +1390,6 @@ fun BarcodeScannerDialog(
                 modifier = Modifier.padding(16.dp)
             ) {
 
-                // Preview container: clipped rounded corners + fade overlays
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1390,11 +1401,9 @@ fun BarcodeScannerDialog(
                         modifier = Modifier.fillMaxSize(),
                         factory = { ctx ->
                             PreviewView(ctx).also { pv ->
-                                // keep your reference assignment intact
                                 previewView.value = pv
 
-                                val cameraProviderFuture =
-                                    ProcessCameraProvider.getInstance(ctx)
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
                                 cameraProviderFuture.addListener({
                                     val cameraProvider = cameraProviderFuture.get()
@@ -1409,7 +1418,7 @@ fun BarcodeScannerDialog(
                                         .also {
                                             it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
                                                 val mediaImage = imageProxy.image
-                                                if (mediaImage != null) {
+                                                if (mediaImage != null && !isProcessing.value) {
                                                     val image = InputImage.fromMediaImage(
                                                         mediaImage,
                                                         imageProxy.imageInfo.rotationDegrees
@@ -1417,11 +1426,33 @@ fun BarcodeScannerDialog(
                                                     scanner.process(image)
                                                         .addOnSuccessListener { barcodes ->
                                                             barcodes.firstOrNull()?.rawValue?.let { code ->
-                                                                onBarcodeScanned(code)
+                                                                val currentTime = System.currentTimeMillis()
+
+                                                                // Allow same product scanning after debounce time
+                                                                if (code != lastProcessedBarcode.value ||
+                                                                    currentTime - lastProcessedTime.value > debounceTime) {
+
+                                                                    isProcessing.value = true
+                                                                    lastProcessedBarcode.value = code
+                                                                    lastProcessedTime.value = currentTime
+
+                                                                    scope.launch {
+                                                                        // Call the callback
+                                                                        onBarcodeScanned(code)
+
+                                                                        // Wait for debounce time before allowing next scan
+                                                                        delay(debounceTime)
+                                                                        isProcessing.value = false
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         .addOnCompleteListener {
                                                             imageProxy.close()
+                                                        }
+                                                        .addOnFailureListener {
+                                                            imageProxy.close()
+                                                            isProcessing.value = false
                                                         }
                                                 } else {
                                                     imageProxy.close()
@@ -1441,7 +1472,6 @@ fun BarcodeScannerDialog(
                         }
                     )
 
-                    // subtle top fade
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1454,7 +1484,6 @@ fun BarcodeScannerDialog(
                             )
                     )
 
-                    // subtle bottom fade
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1467,7 +1496,6 @@ fun BarcodeScannerDialog(
                             )
                     )
 
-                    // optional center guideline (thin translucent line)
                     Box(
                         modifier = Modifier
                             .height(2.dp)
@@ -1477,16 +1505,15 @@ fun BarcodeScannerDialog(
                     )
                 }
 
-                // add a bit more spacing so the button sits clearly below preview
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Close button (keeps same release logic)
                 Button(
                     onClick = {
                         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
                         cameraProviderFuture.addListener({
                             val cameraProvider = cameraProviderFuture.get()
                             cameraProvider.unbindAll()
+                            isProcessing.value = false
                         }, ContextCompat.getMainExecutor(context))
                         onDismiss()
                     },

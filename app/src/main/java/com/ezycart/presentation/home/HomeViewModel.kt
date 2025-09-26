@@ -169,6 +169,7 @@ class HomeViewModel @Inject constructor(
 
     fun addProductToShoppingCart(barCode: String,quantity:Int) {
         loadingManager.show()
+        resetProductInfoDetails()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             when (val result = shoppingUseCase.addToCart(barCode,quantity)) {
@@ -195,6 +196,7 @@ class HomeViewModel @Inject constructor(
 
     fun editProductInShoppingCart(barCode: String,quantity:Int,id:Int) {
         loadingManager.show()
+        resetProductInfoDetails()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             when (val result = shoppingUseCase.editProductInCart(barCode,quantity,id)) {
@@ -221,6 +223,7 @@ class HomeViewModel @Inject constructor(
 
     fun deleteProductFromShoppingCart(barCode: String,id:Int) {
         loadingManager.show()
+        resetProductInfoDetails()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             when (val result = shoppingUseCase.deleteProductFromCart(barCode,id)) {

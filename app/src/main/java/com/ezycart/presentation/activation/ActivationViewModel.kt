@@ -3,6 +3,7 @@ package com.ezycart.presentation.activation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ezycart.BuildConfig
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
 import com.ezycart.data.remote.dto.NetworkResponse
@@ -43,7 +44,7 @@ class ActivationViewModel @Inject constructor(
             val savedAppMode = preferencesManager.getAppMode()
             _stateFlow.update {
                 it.copy(
-                    activationCode = "ALpxvmI0111",
+                    activationCode = BuildConfig.ACTIVATION_CODE,
                     trolleyNumber = "01",
                     appMode = savedAppMode
                 )
