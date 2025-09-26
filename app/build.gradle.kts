@@ -154,6 +154,9 @@ dependencies {
 
     implementation(libs.mlkit.barcode)
 
+    // Custom Toast
+    implementation(libs.dynamic.toasts)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
