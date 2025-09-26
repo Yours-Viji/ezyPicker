@@ -71,6 +71,7 @@ import com.ezycart.R
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.common.components.BarcodeScannerListener
+import com.pranavpandey.android.dynamic.toasts.DynamicToast
 
 @Composable
 fun LoginScreen(
@@ -234,7 +235,7 @@ fun LoginScreen(
                             if (state.employeePin.length == 5) {
                                 viewModel.login()
                             } else {
-                                Toast.makeText(context  , "Please enter a valid 5-digit Employee PIN", Toast.LENGTH_SHORT).show()
+                                DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show();
                             }
                         },
                         modifier = Modifier
