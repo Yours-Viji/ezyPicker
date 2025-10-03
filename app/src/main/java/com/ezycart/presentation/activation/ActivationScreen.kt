@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,7 @@ import com.ezycart.R
 import com.ezycart.domain.model.AppMode
 import com.meticha.permissions_compose.AppPermission
 import com.meticha.permissions_compose.rememberAppPermissionState
+import com.pranavpandey.android.dynamic.toasts.DynamicToast
 
 
 @Composable
@@ -74,7 +76,7 @@ fun ActivationScreen(
     )
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
-
+    val context = LocalContext.current
 
     val isActivated = viewModel.isDeviceActivated.collectAsState()
     LaunchedEffect(isActivated.value) {
@@ -151,8 +153,16 @@ fun ActivationScreen(
                 // Login button
                 Button(
                     onClick = {
-                        viewModel.activateDevice()
-                        permissions.requestPermission()
+                        if (state.activationCode.isEmpty()){
+                            DynamicToast.makeError(context, "Please enter a valid Activation Code").show();
+                        }
+                        else if (state.trolleyNumber.isEmpty()){
+                            DynamicToast.makeError(context, "Please enter a valid Trolley Number").show();
+                        }else{
+                            viewModel.activateDevice()
+                            permissions.requestPermission()
+                        }
+
                     },
                     modifier = Modifier
                         .fillMaxWidth()

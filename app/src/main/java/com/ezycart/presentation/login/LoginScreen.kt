@@ -235,7 +235,7 @@ fun LoginScreen(
                             if (state.employeePin.length == 5) {
                                 viewModel.login()
                             } else {
-                                DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show();
+                                DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show()
                             }
                         },
                         modifier = Modifier
