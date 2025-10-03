@@ -16,6 +16,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -127,7 +128,20 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             }
     }
-
+    override suspend fun updatePaymentStatus(status: JSONObject): NetworkResponse<PaymentStatusResponse> {
+        return safeApiCallRaw { authApi.paymentNotifyApi(status) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                }
+            }
+    }
+    override suspend fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse> {
+        return safeApiCallRaw { authApi.paymentApi(paymentRequest) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                }
+            }
+    }
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()

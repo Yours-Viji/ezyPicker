@@ -8,6 +8,7 @@ import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.datastore.model.UserPreferences
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.NetworkResponse
+import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.domain.usecase.GetAuthDataUseCase
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
@@ -298,6 +300,56 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+     fun updatePaymentStatus() {
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            _priceDetails.value = null
+            when (val result = shoppingUseCase.updatePaymentStatus(JSONObject(getMockPaymentResponse()))) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                    initNewShopping()
+                    loadingManager.hide()
+                }
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+        }
+    }
+    fun makePayment() {
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            _priceDetails.value = null
+            when (val result = shoppingUseCase.makePayment(getPaymentRequest())) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                    updatePaymentStatus()
+                    loadingManager.hide()
+                }
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+        }
+    }
+    private fun getMockPaymentResponse(): String {
+        return "{\"statusCode\":\"100\",\"statusMessage\":\"Approved\"}"
+    }
 
+    private fun getPaymentRequest(): PaymentRequest {
+       return PaymentRequest("DUITNOW","DUITNOW@123456789")
+    }
 
 }

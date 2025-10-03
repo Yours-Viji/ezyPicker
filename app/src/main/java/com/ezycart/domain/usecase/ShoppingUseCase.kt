@@ -2,11 +2,15 @@ package com.ezycart.domain.usecase
 
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.NetworkResponse
+import com.ezycart.data.remote.dto.PaymentRequest
+import com.ezycart.data.remote.dto.PaymentResponse
+import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.repository.AuthRepository
 
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
+import org.json.JSONObject
 import javax.inject.Inject
 
 class ShoppingUseCase @Inject constructor(
@@ -28,8 +32,12 @@ class ShoppingUseCase @Inject constructor(
         return authRepository.getPriceDetails(barCode)
     }
 
-    suspend  fun getShoppingCartDetails(): NetworkResponse<ShoppingCartDetails> {
-        return authRepository.getShoppingCartDetails()
+    suspend  fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse> {
+        return authRepository.makePayment(paymentRequest)
+    }
+
+    suspend  fun updatePaymentStatus(status: JSONObject): NetworkResponse<PaymentStatusResponse> {
+        return authRepository.updatePaymentStatus(status)
     }
 
     suspend  fun getPaymentSummary(): NetworkResponse<ShoppingCartDetails> {

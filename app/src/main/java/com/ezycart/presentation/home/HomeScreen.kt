@@ -181,7 +181,10 @@ fun HomeScreen(
             QrPaymentAlert(
                 amount = "$finalAmount",
                 qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
-                onDismiss = { showQrDialog.value = false }
+                onDismiss = {
+                    showQrDialog.value = false
+                    viewModel.makePayment()
+                }
             )
         }
     }
@@ -580,7 +583,7 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
         Spacer(modifier = Modifier.height(10.dp))
 
         // Apply Coupon / Voucher Button
-        Button(
+       /* Button(
             onClick = {
 
             },
@@ -609,7 +612,7 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
                     color = Color.White
                 )
             )
-        }
+        }*/
 
         // Take up remaining space → pushes "Total Payable" to bottom
         Spacer(modifier = Modifier.weight(1f))
@@ -1600,7 +1603,7 @@ fun ProductPriceAlert(
 
                             if (priceInfo!!.price != priceInfo!!.originalPrice) {
                                 Text(
-                                    text = "RM %.2f".format(priceInfo!!.originalPrice ?: 0.0),
+                                    text = "${Constants.currencySymbol} %.2f".format(priceInfo!!.originalPrice ?: 0.0),
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         color = Color.Gray,
                                         fontWeight = FontWeight.Medium,
@@ -1613,7 +1616,7 @@ fun ProductPriceAlert(
                             }
 
                             Text(
-                                text = "RM %.2f".format(priceInfo!!.price ?: 0.0),
+                                text = "${Constants.currencySymbol} %.2f".format(priceInfo!!.price ?: 0.0),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
@@ -2438,7 +2441,7 @@ fun QrPaymentAlert(
 
                 // Amount
                 Text(
-                    text = "RM $amount",
+                    text = "${Constants.currencySymbol} $amount",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary

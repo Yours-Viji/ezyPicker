@@ -9,6 +9,9 @@ import com.ezycart.data.remote.dto.DeviceDetailsResponse
 import com.ezycart.data.remote.dto.EditProductRequest
 import com.ezycart.data.remote.dto.LoginRequest
 import com.ezycart.data.remote.dto.LoginResponse
+import com.ezycart.data.remote.dto.PaymentRequest
+import com.ezycart.data.remote.dto.PaymentResponse
+import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.model.CartActivationRequest
 import com.ezycart.model.CartActivationResponse
@@ -18,6 +21,7 @@ import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
@@ -91,6 +95,11 @@ interface AuthApi {
         @Body editProductRequest: EditProductRequest
     ): Response<ShoppingCartDetails>
 
+    @POST("/ezyCart/paymentNotify")
+    suspend fun paymentNotifyApi(@Body paymentResponse: JSONObject):  Response<PaymentStatusResponse>
+
+    @POST("/ezyCart/payment")
+    suspend fun paymentApi(@Body paymentRequest: PaymentRequest): Response<PaymentResponse>
    /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>
 
