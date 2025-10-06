@@ -6,6 +6,7 @@ import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.repository.AuthRepository
 
 import com.ezycart.model.ProductInfo
@@ -36,7 +37,7 @@ class ShoppingUseCase @Inject constructor(
         return authRepository.makePayment(paymentRequest)
     }
 
-    suspend  fun updatePaymentStatus(status: JSONObject): NetworkResponse<PaymentStatusResponse> {
+    suspend  fun updatePaymentStatus(status: UpdatePaymentRequest): NetworkResponse<PaymentStatusResponse> {
         return authRepository.updatePaymentStatus(status)
     }
 

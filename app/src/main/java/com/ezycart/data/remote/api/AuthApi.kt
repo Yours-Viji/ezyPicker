@@ -13,6 +13,7 @@ import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.model.CartActivationRequest
 import com.ezycart.model.CartActivationResponse
 import com.ezycart.model.EmployeeLoginRequest
@@ -96,7 +97,7 @@ interface AuthApi {
     ): Response<ShoppingCartDetails>
 
     @POST("/ezyCart/paymentNotify")
-    suspend fun paymentNotifyApi(@Body paymentResponse: JSONObject):  Response<PaymentStatusResponse>
+    suspend fun paymentNotifyApi(@Body paymentResponse: UpdatePaymentRequest):  Response<PaymentStatusResponse>
 
     @POST("/ezyCart/payment")
     suspend fun paymentApi(@Body paymentRequest: PaymentRequest): Response<PaymentResponse>

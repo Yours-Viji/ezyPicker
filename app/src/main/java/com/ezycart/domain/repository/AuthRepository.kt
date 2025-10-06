@@ -7,6 +7,7 @@ import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.model.CartActivationResponse
 import com.ezycart.model.EmployeeLoginResponse
 import com.ezycart.model.ProductInfo
@@ -26,7 +27,7 @@ interface AuthRepository {
     suspend fun addProductToShoppingCart(barCode: String,quantity:Int): NetworkResponse<ShoppingCartDetails>
     suspend fun deleteProductFromShoppingCart(barCode: String,id:Int): NetworkResponse<ShoppingCartDetails>
     suspend fun editProductInCart(barCode: String,id:Int,quantity:Int): NetworkResponse<ShoppingCartDetails>
-    suspend fun updatePaymentStatus(status: JSONObject): NetworkResponse<PaymentStatusResponse>
+    suspend fun updatePaymentStatus(status: UpdatePaymentRequest): NetworkResponse<PaymentStatusResponse>
     suspend fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?

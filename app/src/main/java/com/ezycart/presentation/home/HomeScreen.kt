@@ -2440,11 +2440,11 @@ fun QrPaymentAlert(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Image(
+               /* Image(
                     painter = painterResource(id = R.drawable.id_duit_now_logo),
                     contentDescription = "Ad Banner",
                     modifier = Modifier.size(80.dp)
-                )
+                )*/
 
                 Spacer(modifier = Modifier.height(10.dp))
                 // QR Code Image

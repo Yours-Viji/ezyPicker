@@ -1,24 +1,19 @@
 package com.ezycart.presentation.home
 
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
-import com.ezycart.data.datastore.model.UserPreferences
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.model.AppMode
-import com.ezycart.domain.usecase.GetAuthDataUseCase
 import com.ezycart.domain.usecase.GetCartIdUseCase
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
-import com.ezycart.presentation.common.data.Constants
-import com.ezycart.presentation.login.LoginState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +22,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
@@ -300,11 +294,11 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-     fun updatePaymentStatus() {
+     fun updatePaymentStatus(reference: String) {
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             _priceDetails.value = null
-            when (val result = shoppingUseCase.updatePaymentStatus(JSONObject(getMockPaymentResponse()))) {
+            when (val result = shoppingUseCase.updatePaymentStatus(getMockPaymentResponse(reference))) {
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
@@ -331,7 +325,9 @@ class HomeViewModel @Inject constructor(
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
                     )
-                    updatePaymentStatus()
+                    result.data.referenceNo.let {
+                        updatePaymentStatus(result.data.referenceNo)
+                    }
                     loadingManager.hide()
                 }
                 is NetworkResponse.Error -> {
@@ -344,8 +340,8 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-    private fun getMockPaymentResponse(): String {
-        return "{\"statusCode\":\"100\",\"statusMessage\":\"Approved\"}"
+    private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {
+        return UpdatePaymentRequest(reference,"100","Approved")
     }
 
     private fun getPaymentRequest(): PaymentRequest {

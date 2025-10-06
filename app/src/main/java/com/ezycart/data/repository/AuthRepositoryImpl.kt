@@ -128,7 +128,7 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             }
     }
-    override suspend fun updatePaymentStatus(status: JSONObject): NetworkResponse<PaymentStatusResponse> {
+    override suspend fun updatePaymentStatus(status: UpdatePaymentRequest): NetworkResponse<PaymentStatusResponse> {
         return safeApiCallRaw { authApi.paymentNotifyApi(status) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
