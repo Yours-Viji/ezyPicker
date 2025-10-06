@@ -157,11 +157,12 @@ class AuthRepositoryImpl @Inject constructor(
             val outletId = preferencesManager.getOutletId()
             val merchantId = preferencesManager.getMerchantId()
             val appMode = preferencesManager.getAppMode()
+            val employeeId = preferencesManager.getEmployeeId()
 
             return CreateCartRequest(
                 employeeId = prefs.employeeId.toString(),
-                memberNumber = "",
-                userId = "",
+                memberNumber = "12345678",
+                userId = "$employeeId",
                 name = prefs.employeeName,
                 deviceId = Constants.deviceId,
                 outletId = outletId,

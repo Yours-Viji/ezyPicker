@@ -153,6 +153,10 @@ class PreferencesManager @Inject constructor(
         return dataStore.data.first()[OUTLET_ID] ?: "19"
     }
 
+    suspend fun getEmployeeId(): Int {
+        return dataStore.data.first()[EMPLOYEE_ID] ?: 0
+    }
+
      fun isDeviceActivated(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             preferences[IS_DEVICE_ACTIVATED] ?: false

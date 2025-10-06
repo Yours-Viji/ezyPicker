@@ -151,7 +151,7 @@ fun HomeScreen(
     onThemeChange: () -> Unit,
     onLanguageChange: () -> Unit,
     onLogout: () -> Unit,
-    onTransactionCalled: () -> Unit,
+    onTransactionCalled: () -> Unit
 ) {
 
     val showDialog = remember { mutableStateOf(false) }
@@ -280,7 +280,10 @@ fun HomeScreen(
                             scope.launch { drawerState.open() }
                         },
                         onFirstIconClick = { /* notifications */ },
-                        onLogout = onLogout
+                        onLogout = onLogout,
+                        onRefresh = {
+                            viewModel.initNewShopping()
+                        }
                     )
                 }
             ) { innerPadding ->
@@ -1096,7 +1099,8 @@ fun MyTopAppBar(
     cartCount: Int = 0,
     onMenuClick: () -> Unit,
     onFirstIconClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onRefresh: () -> Unit
 ) {
     val context = LocalContext.current
     TopAppBar(
@@ -1132,6 +1136,19 @@ fun MyTopAppBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                IconButton(
+                    onClick = {
+                        onRefresh()
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_autorenew_24),
+                        contentDescription = "Refresh",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+                Spacer(Modifier.width(30.dp))
                 CartIconWithBadge(count = cartCount)
                 Spacer(Modifier.width(20.dp))
                 IconButton(
