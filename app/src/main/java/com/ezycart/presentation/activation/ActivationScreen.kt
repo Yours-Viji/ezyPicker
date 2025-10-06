@@ -120,19 +120,19 @@ fun ActivationScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            OutletSelectionDropdown()
+          //  OutletSelectionDropdown()
 
-            Spacer(modifier = Modifier.height(10.dp))
+           // Spacer(modifier = Modifier.height(10.dp))
 
-            OutlinedTextField(
+          /*  OutlinedTextField(
                 value = state.trolleyNumber,
                 onValueChange = viewModel::onTrolleyNumberChange,
                 label = { Text("Trolley Number") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
-            )
+            )*/
 
-            Spacer(modifier = Modifier.height(10.dp))
+          //  Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
                 value = state.activationCode,
@@ -156,9 +156,9 @@ fun ActivationScreen(
                         if (state.activationCode.isEmpty()){
                             DynamicToast.makeError(context, "Please enter a valid Activation Code").show();
                         }
-                        else if (state.trolleyNumber.isEmpty()){
+                       /* else if (state.trolleyNumber.isEmpty()){
                             DynamicToast.makeError(context, "Please enter a valid Trolley Number").show();
-                        }else{
+                        }*/else{
                             viewModel.activateDevice()
                             permissions.requestPermission()
                         }
