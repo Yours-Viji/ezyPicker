@@ -45,11 +45,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ezycart.R
 import com.ezycart.domain.model.AppMode
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.meticha.permissions_compose.AppPermission
 import com.meticha.permissions_compose.rememberAppPermissionState
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
 
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun ActivationScreen(
     viewModel: ActivationViewModel = hiltViewModel(),
@@ -62,23 +67,23 @@ fun ActivationScreen(
                 description = "Camera access is needed to take photos. Please grant this permission.",
                 isRequired = true
             ),
-            /* AppPermission(
-                 permission = Manifest.permission.RECORD_AUDIO,
-                 description = "Microphone access is needed for voice recording. Please grant this permission.",
-                 isRequired = false
-             ),
-             AppPermission(
-                 permission = Manifest.permission.READ_CONTACTS,
-                 description = "Contact access is needed to show the contacts in the App. Please grant this permission",
-                 isRequired = true
-             ),*/
         )
     )
-
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val isActivated = viewModel.isDeviceActivated.collectAsState()
+
+
+    LaunchedEffect(cameraPermissionState.status) {
+        when {
+            !cameraPermissionState.status.isGranted ->{
+                cameraPermissionState.launchPermissionRequest()
+            }
+
+        }
+    }
     LaunchedEffect(isActivated.value) {
         if (isActivated.value == false) {
             viewModel.getDeviceInfo()

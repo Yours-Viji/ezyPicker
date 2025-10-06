@@ -1,5 +1,6 @@
 package com.ezycart.presentation.login
 
+import android.Manifest
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -71,8 +72,12 @@ import com.ezycart.R
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.common.components.BarcodeScannerListener
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
@@ -84,9 +89,16 @@ fun LoginScreen(
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     var scanBuffer = remember { mutableStateOf("") }
+    LaunchedEffect(cameraPermissionState.status) {
+        when {
+            !cameraPermissionState.status.isGranted ->{
+                cameraPermissionState.launchPermissionRequest()
+            }
 
+        }
+    }
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
             onLoginSuccess()

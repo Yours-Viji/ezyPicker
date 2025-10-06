@@ -159,6 +159,8 @@ dependencies {
 
     // Custom Toast
     implementation(libs.dynamic.toasts)
+//Permission
+    implementation(libs.accompanist.permissions)
 
     // Testing
     testImplementation(libs.junit)
