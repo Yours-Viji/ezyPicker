@@ -2259,7 +2259,7 @@ fun DrawerContent(
             )
         }
         Divider()
-        Spacer(modifier = Modifier.height(20.dp))
+        /*Spacer(modifier = Modifier.height(20.dp))
         Text(modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 5.dp),
@@ -2272,7 +2272,7 @@ fun DrawerContent(
             onSelectionChanged = onAppModeUpdated,
             selected = appMode
         )
-        Divider()
+        Divider()*/
         Row(
             modifier = Modifier
                 .fillMaxWidth()

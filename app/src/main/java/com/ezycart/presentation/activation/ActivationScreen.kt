@@ -141,11 +141,11 @@ fun ActivationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             )
-            Spacer(modifier = Modifier.height(10.dp))
+           /* Spacer(modifier = Modifier.height(10.dp))
             SingleSelectCheckboxes(
                 onSelectionChanged = viewModel::onAppModeChange,
                 selected = state.appMode
-            )
+            )*/
             Spacer(modifier = Modifier.height(20.dp))
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.padding(16.dp))
