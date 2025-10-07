@@ -263,7 +263,7 @@ fun SingleSelectCheckboxes(
         AppMode.EzyCartPicker to "EzyCartPicker",
         AppMode.EzyLite to "EzyLite"
     ),
-    selected:AppMode = AppMode.EzyCartPicker,
+    selected:AppMode = AppMode.EzyLite,
     modifier: Modifier = Modifier,
     onSelectionChanged: (AppMode) -> Unit = {}
 ) {

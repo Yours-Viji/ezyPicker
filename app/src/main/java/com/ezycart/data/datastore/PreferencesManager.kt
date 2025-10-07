@@ -118,7 +118,7 @@ class PreferencesManager @Inject constructor(
         }
     }
     suspend fun getAppMode(): AppMode {
-        val name = dataStore.data.first()[APP_MODE] ?: AppMode.EzyCartPicker.name
+        val name = dataStore.data.first()[APP_MODE] ?: AppMode.EzyLite.name
         return AppMode.valueOf(name)
     }
     suspend fun clearPreferences() {
