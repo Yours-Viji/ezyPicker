@@ -86,7 +86,7 @@ fun ActivationScreen(
     }
     LaunchedEffect(isActivated.value) {
         if (isActivated.value == false) {
-            viewModel.getDeviceInfo()
+           // viewModel.getDeviceInfo()
         }
     }
 
