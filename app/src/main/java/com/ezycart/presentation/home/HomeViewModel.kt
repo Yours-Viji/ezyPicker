@@ -68,7 +68,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
             _appMode.update { savedAppMode }
-            _isPickerModel.update { savedAppMode.name == AppMode.EzyLite.name }
+          //  _isPickerModel.update { savedAppMode.name == AppMode.EzyLite.name }
             _employeeName.update { preferencesManager.getEmployeeName() }
 
         }
@@ -77,7 +77,7 @@ class HomeViewModel @Inject constructor(
 
     fun onAppModeChange(selectedAppMode:AppMode) {
         viewModelScope.launch {
-            _isPickerModel.update {selectedAppMode.name == AppMode.EzyLite.name}
+          //  _isPickerModel.update {selectedAppMode.name == AppMode.EzyLite.name}
             preferencesManager.setAppMode(selectedAppMode)
         }
     }

@@ -42,6 +42,7 @@ class PreferencesManager @Inject constructor(
         private val EMPLOYEE_TYPE = stringPreferencesKey("employeeType")
         private val EMPLOYEE_ID = intPreferencesKey("id")
         private val EMPLOYEE_STATUS = intPreferencesKey("status")
+        private val CAN_SHOW_PRICE_CHECKER = booleanPreferencesKey("showPriceChecker")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = dataStore.data
@@ -110,6 +111,11 @@ class PreferencesManager @Inject constructor(
     suspend fun setDeviceActivated(){
         dataStore.edit { preferences ->
             preferences[IS_DEVICE_ACTIVATED] = true
+        }
+    }
+    suspend fun setPriceCheckerStatus(status:Boolean){
+        dataStore.edit { preferences ->
+            preferences[CAN_SHOW_PRICE_CHECKER] = status
         }
     }
     suspend fun setAppMode(appMode: AppMode){
