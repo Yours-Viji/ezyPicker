@@ -160,10 +160,10 @@ fun HomeScreen(
     val priceInfo by viewModel.priceDetails.collectAsState()
     val productInfo by viewModel.productInfo.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
-
+val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var canShowPriceChecker = remember { mutableStateOf(true) }
+   // var canShowPriceChecker = remember { mutableStateOf(true) }
     val appMode by viewModel.appMode.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
@@ -266,7 +266,7 @@ fun HomeScreen(
                             delay(100)
                             focusRequester.requestFocus()
                         }
-                        canShowPriceChecker.value = it
+                        viewModel.setPriceCheckerView(it)
                     }
                 )
             }

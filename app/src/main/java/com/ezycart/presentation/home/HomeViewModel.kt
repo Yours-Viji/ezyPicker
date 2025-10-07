@@ -52,6 +52,9 @@ class HomeViewModel @Inject constructor(
     private val _isPickerModel = MutableStateFlow<Boolean>(false)
     val isPickerModel: StateFlow<Boolean> = _isPickerModel.asStateFlow()
 
+    private val _canShowPriceChecker = MutableStateFlow<Boolean>(true)
+    val canShowPriceChecker: StateFlow<Boolean> = _canShowPriceChecker.asStateFlow()
+
     private val _appMode = MutableStateFlow(AppMode.EzyLite)
     val appMode: StateFlow<AppMode> = _appMode
 
@@ -70,11 +73,16 @@ class HomeViewModel @Inject constructor(
             _appMode.update { savedAppMode }
           //  _isPickerModel.update { savedAppMode.name == AppMode.EzyLite.name }
             _employeeName.update { preferencesManager.getEmployeeName() }
-
+            _canShowPriceChecker.update { preferencesManager.canShowPriceChecker() }
         }
 
     }
-
+    fun setPriceCheckerView(canShow: Boolean){
+        viewModelScope.launch {
+            preferencesManager.setPriceCheckerStatus(canShow)
+        }
+        _canShowPriceChecker.update { canShow }
+    }
     fun onAppModeChange(selectedAppMode:AppMode) {
         viewModelScope.launch {
           //  _isPickerModel.update {selectedAppMode.name == AppMode.EzyLite.name}

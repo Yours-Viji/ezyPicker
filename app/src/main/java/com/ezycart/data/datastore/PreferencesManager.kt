@@ -163,6 +163,10 @@ class PreferencesManager @Inject constructor(
         return dataStore.data.first()[EMPLOYEE_ID] ?: 0
     }
 
+    suspend fun canShowPriceChecker(): Boolean {
+        return dataStore.data.first()[CAN_SHOW_PRICE_CHECKER] ?: true
+    }
+
      fun isDeviceActivated(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             preferences[IS_DEVICE_ACTIVATED] ?: false
