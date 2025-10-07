@@ -162,6 +162,11 @@ dependencies {
 //Permission
     implementation(libs.accompanist.permissions)
 
+    //Near Pay
+    implementation(libs.nearpay.sdk.store)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.process.phoenix)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

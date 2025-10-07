@@ -2,8 +2,10 @@ package com.ezycart.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ezycart.BuildConfig
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
+import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -11,6 +13,7 @@ import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.model.AppMode
 import com.ezycart.domain.usecase.GetCartIdUseCase
 import com.ezycart.domain.usecase.LoadingManager
+import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
@@ -27,6 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val shoppingUseCase: ShoppingUseCase,
+    private val paymentUseCase: PaymentUseCase,
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
     private val loadingManager: LoadingManager
@@ -61,12 +65,7 @@ class HomeViewModel @Inject constructor(
     private val _employeeName = MutableStateFlow("")
     val employeeName: StateFlow<String> = _employeeName.asStateFlow()
 
-    val cartId: StateFlow<String?> = getCartIdUseCase()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    var cartId = ""
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -112,6 +111,8 @@ class HomeViewModel @Inject constructor(
                         isLoading = false,
                     )
                     loadingManager.hide()
+                    cartId = preferencesManager.getShoppingCartId()
+                    //createNewJwtToken()
                 }
                 is NetworkResponse.Error -> {
                     _stateFlow.value = _stateFlow.value.copy(
@@ -348,6 +349,54 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    private fun createNewJwtToken() {
+        loadingManager.show()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+            when (val result = paymentUseCase.createNewJwtToken("${BuildConfig.BASE_URL}/payment/jwt/$cartId",
+                CreateJwtTokenRequest("8d1cbffb-1e18-4e1e-9aca-b3dc842de74e","0211206300112063","240419","0211206300112063"))) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                    )
+                    loadingManager.hide()
+                }
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message ?: "Unable to create jwt token",
+                    )
+                    loadingManager.hide()
+                }
+            }
+        }
+    }
+
+    private fun createNewNearPaySession() {
+        loadingManager.show()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+            when (val result = paymentUseCase.createNearPaySession("${BuildConfig.BASE_URL}/payment/session/$cartId")) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                    )
+                    loadingManager.hide()
+                }
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message ?: "Unable to create near Pay session",
+                    )
+                    loadingManager.hide()
+                }
+            }
+        }
+    }
+
     private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {
         return UpdatePaymentRequest(reference,"100","Approved")
     }

@@ -4,11 +4,14 @@ import com.ezycart.data.remote.dto.AddProductToCartRequest
 import com.ezycart.data.remote.dto.ApiResponse
 import com.ezycart.data.remote.dto.CreateCartRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
+import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeleteProductInCartRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
 import com.ezycart.data.remote.dto.EditProductRequest
+import com.ezycart.data.remote.dto.JwtTokenResponse
 import com.ezycart.data.remote.dto.LoginRequest
 import com.ezycart.data.remote.dto.LoginResponse
+import com.ezycart.data.remote.dto.NearPaymentSessionResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
@@ -101,7 +104,17 @@ interface AuthApi {
 
     @POST("/ezyCart/payment")
     suspend fun paymentApi(@Body paymentRequest: PaymentRequest): Response<PaymentResponse>
-   /* @POST("/Login")
+
+
+    @POST
+    suspend fun createNewJwtToken(
+        @Url url: String,@Body createJwtTokenRequest:CreateJwtTokenRequest): Response<JwtTokenResponse>
+
+    @GET
+    suspend fun createPaymentSessionUsingJwtToken(
+        @Url url: String): Response<NearPaymentSessionResponse>
+
+    /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>
 
     @GET("ezcart/product")

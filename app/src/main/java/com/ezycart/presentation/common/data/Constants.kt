@@ -54,4 +54,5 @@ object Constants {
     var deviceId = ""
     var employeeToken = ""
     var jwtToken = ""
+    var nearPaySessionID = ""
 }

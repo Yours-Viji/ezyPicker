@@ -3,6 +3,7 @@ package com.ezycart.di
 import com.ezycart.domain.repository.AuthRepository
 import com.ezycart.domain.usecase.GetAuthDataUseCase
 import com.ezycart.domain.usecase.LoginUseCase
+import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.SaveAuthTokenUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import dagger.Module
@@ -26,6 +27,12 @@ object ViewModelModule {
     @Singleton
     fun provideShoppingUseCase(authRepository: AuthRepository): ShoppingUseCase {
         return ShoppingUseCase(authRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun providePaymentUseCase(authRepository: AuthRepository): PaymentUseCase {
+        return PaymentUseCase(authRepository)
     }
 
     @Provides

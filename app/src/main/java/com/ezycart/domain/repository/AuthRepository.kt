@@ -1,7 +1,10 @@
 package com.ezycart.domain.repository
 
 import com.ezycart.data.remote.dto.CreateCartResponse
+import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
+import com.ezycart.data.remote.dto.JwtTokenResponse
+import com.ezycart.data.remote.dto.NearPaymentSessionResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
@@ -29,6 +32,8 @@ interface AuthRepository {
     suspend fun editProductInCart(barCode: String,id:Int,quantity:Int): NetworkResponse<ShoppingCartDetails>
     suspend fun updatePaymentStatus(status: UpdatePaymentRequest): NetworkResponse<PaymentStatusResponse>
     suspend fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse>
+    suspend fun createJwtToken(url:String,jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse>
+    suspend fun createNearPaySession(url:String): NetworkResponse<NearPaymentSessionResponse>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
     fun isDeviceActivated(): Flow<Boolean>

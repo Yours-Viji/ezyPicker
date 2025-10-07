@@ -142,6 +142,26 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             }
     }
+
+    override suspend fun createJwtToken(
+        url: String,
+        jwtTokenRequest: CreateJwtTokenRequest
+    ): NetworkResponse<JwtTokenResponse> {
+        return safeApiCallRaw { authApi.createNewJwtToken(url,jwtTokenRequest) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                }
+            }
+    }
+
+    override suspend fun createNearPaySession(url: String): NetworkResponse<NearPaymentSessionResponse> {
+        return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(url) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                }
+            }
+    }
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()

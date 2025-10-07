@@ -29,6 +29,9 @@ camerax = "1.3.4"
 mlkit-barcode = "17.2.0"
 dynamic-toasts = "4.3.0"
 accompanist = "0.31.5-beta"
+nearpay-sdk-store = "2.1.88"
+work-runtime-ktx = "2.8.1"
+process-phoenix = "2.1.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -80,6 +83,9 @@ camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax"
 mlkit-barcode = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
 dynamic-toasts = { group = "com.pranavpandey.android", name = "dynamic-toasts", version.ref = "dynamic-toasts" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
+nearpay-sdk-store = { module = "io.nearpay:nearpay-sdk-store", version.ref = "nearpay-sdk-store" }
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime-ktx" }
+process-phoenix = { module = "com.jakewharton:process-phoenix", version.ref = "process-phoenix" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
