@@ -1422,7 +1422,7 @@ fun BarcodeScannerDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(330.dp)
+                        .height(390.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.Black)
                 ) {
