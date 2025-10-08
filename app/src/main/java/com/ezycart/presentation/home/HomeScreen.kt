@@ -136,6 +136,7 @@ import com.ezycart.presentation.common.data.Constants
 import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.pranavpandey.android.dynamic.toasts.DynamicToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -153,7 +154,7 @@ fun HomeScreen(
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
-
+    val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
     val employeeName = viewModel.employeeName.collectAsState()
@@ -169,7 +170,15 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     // Correct way to declare the state
     var showQrDialog = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-
+    val context = LocalContext.current
+    LaunchedEffect(state.error) {
+        state.error?.let { errorMessage ->
+            if (errorMessage.isNotEmpty()) {
+                DynamicToast.makeError(context, errorMessage).show()
+                viewModel.clearError()
+            }
+        }
+    }
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
             showDialog.value = true

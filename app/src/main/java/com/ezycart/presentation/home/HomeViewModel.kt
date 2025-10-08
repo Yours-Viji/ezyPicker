@@ -266,15 +266,22 @@ class HomeViewModel @Inject constructor(
                     getPriceDetails(barCode)
                 }
                 is NetworkResponse.Error -> {
+                    var message = result.message
+                    if (message.contains("End of input at line 1 column 1 path")) {
+                        message = "API Error: Server returned empty response"
+                    }
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false,
-                        error = result.message,
+                        error = message
                     )
                     loadingManager.hide()
                     //End of input at line 1 column 1 path
                 }
             }
         }
+    }
+    fun clearError() {
+        _stateFlow.value = _stateFlow.value.copy(error = null)
     }
     fun resetProductInfoDetails() {
         _productInfo.value = null
