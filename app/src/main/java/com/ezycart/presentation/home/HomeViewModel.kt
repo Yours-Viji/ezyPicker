@@ -1,5 +1,6 @@
 package com.ezycart.presentation.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.BuildConfig
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
@@ -94,6 +96,7 @@ class HomeViewModel @Inject constructor(
         createNewShoppingCart()
     }
    private fun clearCartDetails(){
+       isJwtTokenCreated = false
         _productInfo.value = null
         _priceDetails.value = null
         _shoppingCartInfo.value = null
@@ -375,6 +378,7 @@ class HomeViewModel @Inject constructor(
                     )
                     preferencesManager.saveJwtToken(result.data.token)
                     loadingManager.hide()
+
                     createNewNearPaySession()
                 }
                 is NetworkResponse.Error -> {

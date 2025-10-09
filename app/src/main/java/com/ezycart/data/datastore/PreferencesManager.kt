@@ -152,8 +152,8 @@ class PreferencesManager @Inject constructor(
     suspend fun getXAuthToken(): String? {
         return dataStore.data.first()[X_AUTH_TOKEN]
     }
-    suspend fun getJwtToken(): String? {
-        return dataStore.data.first()[JWT_TOKEN]
+    suspend fun getJwtToken(): String {
+        return dataStore.data.first()[JWT_TOKEN] ?: ""
     }
      fun getCartId(): Flow<String> {
         return dataStore.data.map { preferences ->

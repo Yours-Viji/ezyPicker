@@ -13,8 +13,8 @@ class PaymentUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
 
-    /*suspend  fun invoke(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
-        return authRepository.createJwtToken(jwtTokenRequest)
+   /* suspend  fun invoke(){
+        return authRepository.refreshInterceptor()
     }*/
 
     suspend  fun createNewJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
@@ -24,4 +24,6 @@ class PaymentUseCase @Inject constructor(
     suspend  fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse> {
         return authRepository.createNearPaySession()
     }
+
+
 }

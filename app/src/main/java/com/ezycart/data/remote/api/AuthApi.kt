@@ -108,10 +108,13 @@ interface AuthApi {
 
     @POST("/payment/jwt/{cart_Id}")
     suspend fun createNewJwtToken(
-        @Path(value = "cart_Id", encoded = true) cartId: String,@Body createJwtTokenRequest:CreateJwtTokenRequest): Response<ApiResponse<JwtTokenResponse>>
+        @Path(value = "cart_Id", encoded = true) cartId: String,@Body createJwtTokenRequest:CreateJwtTokenRequest): Response<JwtTokenResponse>
 
     @GET("/payment/session/{cart_Id}")
-    suspend fun createPaymentSessionUsingJwtToken(@Path(value = "cart_Id", encoded = true) cartId: String): Response<NearPaymentSessionResponse>
+    suspend fun createPaymentSessionUsingJwtToken(
+        @Header("jwt-Authorization") authToken: String,
+        @Path(value = "cart_Id", encoded = true) cartId: String
+    ): Response<NearPaymentSessionResponse>
 
     /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>

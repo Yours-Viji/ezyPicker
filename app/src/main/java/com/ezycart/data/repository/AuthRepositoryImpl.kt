@@ -16,14 +16,13 @@ import com.ezycart.presentation.common.data.Constants
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import org.json.JSONObject
 import retrofit2.Response
+import retrofit2.Retrofit
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
 ) : AuthRepository {
 
     override suspend fun login(employeePin: String): NetworkResponse<EmployeeLoginResponse> {
@@ -144,20 +143,19 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
-
     override suspend fun createJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
-        return safeApiCall { authApi.createNewJwtToken(preferencesManager.getShoppingCartId(),jwtTokenRequest) }
+        return safeApiCallRaw { authApi.createNewJwtToken(preferencesManager.getShoppingCartId(),jwtTokenRequest) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
+                    preferencesManager.saveJwtToken(result.data.token)
                     Log.i("Result","${result.data}")
                 }
             }
     }
 
 
-
     override suspend fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse> {
-        return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(preferencesManager.getShoppingCartId()) }
+        return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(authToken = preferencesManager.getJwtToken(), cartId = preferencesManager.getShoppingCartId()) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
                 }

@@ -33,6 +33,14 @@ object NetworkModule {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
+            .addNetworkInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                response.newBuilder()
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    .header("Pragma", "no-cache")
+                    .header("Expires", "0")
+                    .build()
+            }
             .build()
     }
 
@@ -51,4 +59,6 @@ object NetworkModule {
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return ApiService.createAuthApi(retrofit)
     }
+
+
 }

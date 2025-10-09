@@ -2,7 +2,6 @@ package com.ezycart.di
 
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.api.AuthApi
-import com.ezycart.data.remote.interceptors.AuthInterceptor
 import com.ezycart.data.repository.AuthRepositoryImpl
 import com.ezycart.domain.repository.AuthRepository
 import dagger.Module
@@ -19,8 +18,9 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         authApi: AuthApi,
-        preferencesManager: PreferencesManager
+        preferencesManager: PreferencesManager,
     ): AuthRepository {
         return AuthRepositoryImpl(authApi, preferencesManager)
     }
+
 }

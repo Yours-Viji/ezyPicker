@@ -36,6 +36,7 @@ interface AuthRepository {
     suspend fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
+    //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>
 }
