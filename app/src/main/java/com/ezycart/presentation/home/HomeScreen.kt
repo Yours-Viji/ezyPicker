@@ -150,7 +150,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 
     onThemeChange: () -> Unit,
-    onLanguageChange: () -> Unit,
+    onPaymentInitialize: () -> Unit,
+    makeNearPayment:(String, String)->Unit,
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
@@ -169,6 +170,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
     var showQrDialog = remember { mutableStateOf(false) }
+    var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val context = LocalContext.current
     LaunchedEffect(state.error) {
@@ -179,9 +181,19 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
             }
         }
     }
+    LaunchedEffect(state.isReadyToInitializePaymentSdk) {
+        onPaymentInitialize()
+    }
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
             showDialog.value = true
+        }
+    }
+    if (proceedTapToPay.value) {
+        shoppingCartInfo.value.let {
+            val finalAmount= it?.finalAmount ?: 0.0
+            makeNearPayment("12345","$finalAmount")
+            proceedTapToPay.value=false
         }
     }
     if (showQrDialog.value) {
@@ -337,6 +349,8 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                     }*/
                     PickersShoppingScreen(viewModel, onQrPaymentClick = {
                         showQrDialog.value = true
+                    },onTapToPayClick = {
+                        proceedTapToPay.value=true
                     })
                 }
             }
@@ -398,7 +412,7 @@ fun EmptyCartScreen(
 }
 
 @Composable
-fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit) {
+fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
     val showScanner = remember { mutableStateOf(false) }
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
@@ -513,7 +527,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit)
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    CheckoutSummaryScreen(shoppingCartInfo,onQrPaymentClick={onQrPaymentClick()})
+                    CheckoutSummaryScreen(shoppingCartInfo,onQrPaymentClick={onQrPaymentClick()},onTapToPayClick={onTapToPayClick()})
                 }
             }
         }
@@ -551,7 +565,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit)
 }
 
 @Composable
-fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaymentClick: () -> Unit) {
+fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
 
     Column(
         modifier = Modifier
@@ -647,7 +661,7 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-
+                    onTapToPayClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

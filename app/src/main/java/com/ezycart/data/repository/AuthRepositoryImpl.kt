@@ -148,6 +148,7 @@ class AuthRepositoryImpl @Inject constructor(
             .also { result ->
                 if (result is NetworkResponse.Success) {
                     preferencesManager.saveJwtToken(result.data.token)
+                    Constants.jwtToken = result.data.token
                     Log.i("Result","${result.data}")
                 }
             }

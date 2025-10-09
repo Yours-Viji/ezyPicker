@@ -13,7 +13,8 @@ interface NearPayService {
         referenceNumber: String,
         amount: String,
         emailId: String,
-        mobileNumber: String
+        mobileNumber: String,
+        listener: NearPaymentListener?
     )
 
     fun createUserSession(sessionID : String)

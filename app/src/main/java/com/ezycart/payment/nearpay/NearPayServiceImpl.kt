@@ -1,6 +1,7 @@
 package com.ezycart.payment.nearpay
 
 import android.app.Activity
+import com.ezycart.BuildConfig
 import com.ezycart.presentation.common.data.Constants
 import io.nearpay.sdk.Environments
 import io.nearpay.sdk.NearPay
@@ -29,20 +30,20 @@ import java.util.UUID
 
 class NearPayServiceImpl : NearPayService {
 
-   // val sharedPref: SharedPref by inject()
     private val tag = "NearPay SDK Log ==>>"
     private lateinit var nearPay: NearPay
-    private val jwtToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9wcyI6ImF1dGgiLCJjbGllbnRfdXVpZCI6ImVmZmUwMDU0LWI2NDctNDRhOC04OTZhLTBiMzUzM2RhMzY0MSIsInRlcm1pbmFsX2lkIjoiMDIxMTIwNjMwMDExMjA2MyJ9LCJpYXQiOjE3MzIyMDQ0MzJ9.RsT4KCDELG4En40xNd4IGNLXAnvrKWAYNyfbS6bYIvylchIYz9Sx2FCMkpifba40tRTsZvKHQ5UjkL5l7boNQG52PNZiRnQDWN6Hlpk5PXEomjoaGXI9i4QN7c82VsXsRImS6PgAPCGndFIzdT_a_1AZGTCV-IlyCG8lOuqE6tuy9PHrlZ2L1pI37a_FeJCk2uvWGMIVXDqYFYNGfGxvNELxrtQFN4hPf9aFIhPrigTuzjCHMkcQPNBTRAKxoVahYZuhiTt0Ak_WnrM5xbzMCWDllmKzgPu_m27Qp1-3aZ0ZGHcBN9dlmucF7DWYL8W6fQ3PVdeI5KZkPNwPaW4_wQ"
+    private var paymentListener: NearPaymentListener? = null
+    private val jwtToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9wcyI6ImF1dGgiLCJjbGllbnRfdXVpZCI6ImVmZmUwMDU0LWI2NDctNDRhOC04OTZhLTBiMzUzM2RhMzY0MSIsInRlcm1pbmFsX2lkIjoiMDIxMTIwNjMwMDExMjA2MyJ9LCJpYXQiOjE3NDAwMTkxMjh9.dkcnpsophU4JnPSfdQ_99BKPvPgdHu2ETNJ8Qe0R-IXMy1j8Z14lAbrNJqZFvu26OPR2ujltH1KZHgsLsz3AxFn_2JbP37234BcAWm1GTAB1mLlKIU4-hyD_ORNout_HFKz0n0GDt3pyicEBBosJVQEeqfWnNGM6mOWvZHaOHzAu9DyYGhuPM9waH81O-vVFB2ipsgIj-U9c_tpPftds-jj2YFN0YYgIDBAKjoUA_jC7WDNz9CJwGUBd_k7k9-PDOnQ4uIGTL8TMSn_E_6iMc2ZwG-Gjop87I_SnHKPq6IffGPmX9XGGpCp8XlYK6BTdGSiHSvOAqLkPAZ4rrbbzOQ"
     override fun initializeSdk(activity: Activity) {
 
         nearPay = NearPay.Builder()
             .context(activity)
-            .authenticationData(authenticateByJwt(getJwtToken()))
+            .authenticationData(AuthenticationData.Jwt(getJwtToken()))
             .environment(Environments.SANDBOX)
             .locale(Locale.getDefault())
             .networkConfiguration(NetworkConfiguration.DEFAULT)
-            .uiPosition(UIPosition.CENTER_BOTTOM)
-            .paymentText(PaymentText("يرجى تمرير الطاقة", "please tap your card"))
+            .uiPosition(UIPosition.BOTTOM_END)
+            .paymentText(PaymentText("يرجى تمرير الطاقة", "Please tap your card"))
             .loadingUi(true)
             .build()
     }
@@ -88,9 +89,12 @@ class NearPayServiceImpl : NearPayService {
         referenceNumber: String,
         payableAmount: String,
         emailId: String,
-        mobileNumber: String
+        mobileNumber: String,
+        listener: NearPaymentListener?
     ) {
-       val amount = payableAmount.toLong()
+        this.paymentListener = listener
+       // val amount: Long = if (BuildConfig.IS_LIVE) payableAmount.toLong() else "100".toLong()
+        val amount: Long =payableAmount.toLong()
         val customerReferenceNumber = referenceNumber.ifEmpty {
             "9ace70b7-977d-4094-b7f4-4ecb17de9867"
         }
@@ -111,40 +115,23 @@ class NearPayServiceImpl : NearPayService {
             object :
                 PurchaseListener {
                 override fun onPurchaseApproved(transactionData: TransactionData) {
+                    paymentListener?.onPaymentSuccess(transactionData)
+
 
                 }
 
                 override fun onPurchaseFailed(purchaseFailure: PurchaseFailure) {
-                    when (purchaseFailure) {
-                        is PurchaseFailure.PurchaseDeclined -> {
-                            // when the payment declined.
-                        }
-
-                        is PurchaseFailure.PurchaseRejected -> {
-                            // when the payment is rejected .
-                        }
-
-                        is PurchaseFailure.AuthenticationFailed -> {
-                            // when the authentication failed .
-                            // You can use the following method to update your JWT
-                            //createAuthentication()
-                        }
-
-                        is PurchaseFailure.InvalidStatus -> {
-                            // Please note that you can get the status using purchaseFailure.status
-
-
-                        }
-
-                        is PurchaseFailure.GeneralFailure -> {
-                            // when there is General error .
-                        }
-
-                        else -> {
-
-                        }
+                    val errorMessage = when (purchaseFailure) {
+                        is PurchaseFailure.PurchaseDeclined -> "Payment declined"
+                        is PurchaseFailure.PurchaseRejected -> "Payment rejected"
+                        is PurchaseFailure.AuthenticationFailed -> "Authentication failed"
+                        is PurchaseFailure.InvalidStatus -> "Invalid status"
+                        is PurchaseFailure.GeneralFailure -> "General failure"
+                        else -> "Unknown error"
                     }
-                }
+                    paymentListener?.onPaymentFailed(errorMessage)
+                    }
+
             })
     }
 
@@ -283,7 +270,7 @@ class NearPayServiceImpl : NearPayService {
     }
 
     private fun authenticateByJwt(loginData: String): AuthenticationData.Jwt {
-      return  AuthenticationData.Jwt(loginData)
+        return  AuthenticationData.Jwt(loginData)
 
     }
 

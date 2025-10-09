@@ -1,9 +1,7 @@
 package com.ezycart.presentation.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ezycart.BuildConfig
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
@@ -20,13 +18,10 @@ import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
@@ -35,7 +30,7 @@ class HomeViewModel @Inject constructor(
     private val paymentUseCase: PaymentUseCase,
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
-    private val loadingManager: LoadingManager
+    private val loadingManager: LoadingManager,
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
     val stateFlow: StateFlow<HomeState> = _stateFlow.asStateFlow()
@@ -401,6 +396,7 @@ class HomeViewModel @Inject constructor(
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false,
+                        isReadyToInitializePaymentSdk = true
                     )
                     loadingManager.hide()
                 }

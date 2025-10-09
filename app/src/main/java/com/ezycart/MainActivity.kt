@@ -3,6 +3,7 @@ package com.ezycart
 import android.app.Application
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ezycart.domain.usecase.LoadingManager
+import com.ezycart.payment.nearpay.NearPayService
+import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.SplashViewModel
 import com.ezycart.presentation.activation.ActivationScreen
@@ -33,6 +36,10 @@ import com.ezycart.presentation.login.LoginScreen
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
+import io.nearpay.sdk.utils.enums.TransactionData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -42,9 +49,11 @@ import javax.inject.Inject
 class MyApp : Application()
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), NearPaymentListener {
     @Inject
     lateinit var loadingManager: LoadingManager
+    @Inject
+    lateinit var nearPayService: NearPayService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,9 +137,12 @@ class MainActivity : ComponentActivity() {
                                             // 🔹 Handle theme change
                                             //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
                                         },
-                                        onLanguageChange = {
-                                            // 🔹 Handle language change
-                                            // Toast.makeText(this, "Language change clicked", Toast.LENGTH_SHORT).show()
+                                        onPaymentInitialize = {
+                                            nearPayService.initializeSdk(this@MainActivity)
+                                            nearPayService.paymentSdkSetUp()
+                                        },
+                                        makeNearPayment={ reference, amount->
+                                            nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = this@MainActivity)
                                         },
                                         onLogout = {
                                             lifecycleScope.launch {
@@ -143,7 +155,6 @@ class MainActivity : ComponentActivity() {
                                         onTransactionCalled = {
                                             navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
                                         }
-
                                     )
                                 }
                                 composable("webview/{url}") { backStackEntry ->
@@ -171,6 +182,29 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
             // Fallback: navigate with empty URL or show error
             navigate("webview/error")
+        }
+    }
+    override fun onPaymentSuccess(transactionData: TransactionData) {
+        runOnUiThread {
+            nearPayResult(true, transactionData)
+        }
+    }
+
+    override fun onPaymentFailed(error: String) {
+        runOnUiThread {
+            // Handle payment failure
+            Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
+        }
+    }
+    fun nearPayResult(status: Boolean, transactionData: TransactionData) {
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(3000)
+            lifecycleScope.launch(Dispatchers.Main) {
+                try {
+
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 }
