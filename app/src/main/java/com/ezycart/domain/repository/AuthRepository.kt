@@ -32,8 +32,8 @@ interface AuthRepository {
     suspend fun editProductInCart(barCode: String,id:Int,quantity:Int): NetworkResponse<ShoppingCartDetails>
     suspend fun updatePaymentStatus(status: UpdatePaymentRequest): NetworkResponse<PaymentStatusResponse>
     suspend fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse>
-    suspend fun createJwtToken(url:String,jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse>
-    suspend fun createNearPaySession(url:String): NetworkResponse<NearPaymentSessionResponse>
+    suspend fun createJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse>
+    suspend fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
     fun isDeviceActivated(): Flow<Boolean>

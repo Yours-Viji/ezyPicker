@@ -1,5 +1,6 @@
 package com.ezycart.data.repository
 
+import android.util.Log
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.api.AuthApi
 import com.ezycart.data.remote.dto.*
@@ -143,19 +144,20 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
-    override suspend fun createJwtToken(
-        url: String,
-        jwtTokenRequest: CreateJwtTokenRequest
-    ): NetworkResponse<JwtTokenResponse> {
-        return safeApiCallRaw { authApi.createNewJwtToken(url,jwtTokenRequest) }
+
+    override suspend fun createJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
+        return safeApiCall { authApi.createNewJwtToken(preferencesManager.getShoppingCartId(),jwtTokenRequest) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
+                    Log.i("Result","${result.data}")
                 }
             }
     }
 
-    override suspend fun createNearPaySession(url: String): NetworkResponse<NearPaymentSessionResponse> {
-        return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(url) }
+
+
+    override suspend fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse> {
+        return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(preferencesManager.getShoppingCartId()) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
                 }

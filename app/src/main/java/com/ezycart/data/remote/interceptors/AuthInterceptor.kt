@@ -26,6 +26,10 @@ class AuthInterceptor @Inject constructor(
             preferencesManager.getXAuthToken()
         }
 
+        val jwtToken = runBlocking {
+            preferencesManager.getJwtToken()
+        }
+
         val appMode = runBlocking {
             preferencesManager.getAppMode()
         }
@@ -40,6 +44,10 @@ class AuthInterceptor @Inject constructor(
             requestBuilder.header(Constants.X_AUTHORIZATION, "Bearer $token")
         }
 
+        jwtToken?.takeIf { it.isNotBlank() }?.let { token ->
+            requestBuilder.header("jwt-authorization", "Bearer $token")
+        }
+
         requestBuilder.header(Constants.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON)
         requestBuilder.header(Constants.ACCEPT, Constants.APPLICATION_JSON)
         requestBuilder.header(Constants.API_KEY, Constants.API_KEY_VALUE)
@@ -52,7 +60,7 @@ class AuthInterceptor @Inject constructor(
         requestBuilder.header(Constants.APP_VERSION, "1.0.0")
         requestBuilder.header(Constants.BUILD_NO, "01")
 
-        requestBuilder.header("jwt-authorization", "Bearer ${Constants.jwtToken}")
+        //requestBuilder.header("jwt-authorization", "Bearer ${Constants.jwtToken}")
         requestBuilder.header("appMode", appMode.name)
         val request = requestBuilder.build()
         return chain.proceed(request)

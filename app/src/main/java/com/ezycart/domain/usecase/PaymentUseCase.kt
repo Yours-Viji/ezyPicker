@@ -13,17 +13,15 @@ class PaymentUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
 
-    suspend  fun invoke(url: String,
-                        jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
-        return authRepository.createJwtToken(url,jwtTokenRequest)
+    /*suspend  fun invoke(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
+        return authRepository.createJwtToken(jwtTokenRequest)
+    }*/
+
+    suspend  fun createNewJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
+        return authRepository.createJwtToken(jwtTokenRequest)
     }
 
-    suspend  fun createNewJwtToken(url: String,
-                                   jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse> {
-        return authRepository.createJwtToken(url,jwtTokenRequest)
-    }
-
-    suspend  fun createNearPaySession(url: String): NetworkResponse<NearPaymentSessionResponse> {
-        return authRepository.createNearPaySession(url)
+    suspend  fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse> {
+        return authRepository.createNearPaySession()
     }
 }

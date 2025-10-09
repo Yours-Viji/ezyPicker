@@ -33,6 +33,7 @@ class PreferencesManager @Inject constructor(
         private val SHOPPING_CART_ID = stringPreferencesKey("cart_id")
 
         private val X_AUTH_TOKEN = stringPreferencesKey("x_auth_token")
+        private val JWT_TOKEN = stringPreferencesKey("jwt_token")
         private val ALLOW_EZY_LITE = booleanPreferencesKey("allowEzycartLite")
         private val EMPLOYEE_EMAIL = stringPreferencesKey("email")
         private val EMPLOYEE_DEPARTMENT = stringPreferencesKey("employeeDepartment")
@@ -97,6 +98,11 @@ class PreferencesManager @Inject constructor(
             preferences[X_AUTH_TOKEN] = token
         }
     }
+    suspend fun saveJwtToken(token:String){
+        dataStore.edit { preferences ->
+            preferences[JWT_TOKEN] = token
+        }
+    }
     suspend fun saveMerchantId(id:String){
         dataStore.edit { preferences ->
             preferences[MERCHANT_ID] = id
@@ -145,6 +151,9 @@ class PreferencesManager @Inject constructor(
 
     suspend fun getXAuthToken(): String? {
         return dataStore.data.first()[X_AUTH_TOKEN]
+    }
+    suspend fun getJwtToken(): String? {
+        return dataStore.data.first()[JWT_TOKEN]
     }
      fun getCartId(): Flow<String> {
         return dataStore.data.map { preferences ->

@@ -66,6 +66,7 @@ class HomeViewModel @Inject constructor(
     val employeeName: StateFlow<String> = _employeeName.asStateFlow()
 
     var cartId = ""
+    var isJwtTokenCreated =false
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -112,7 +113,6 @@ class HomeViewModel @Inject constructor(
                     )
                     loadingManager.hide()
                     cartId = preferencesManager.getShoppingCartId()
-                    //createNewJwtToken()
                 }
                 is NetworkResponse.Error -> {
                     _stateFlow.value = _stateFlow.value.copy(
@@ -160,6 +160,11 @@ class HomeViewModel @Inject constructor(
                     )
                     _shoppingCartInfo.value=result.data
                     loadingManager.hide()
+                    if(!isJwtTokenCreated){
+                        isJwtTokenCreated = true
+                        createNewJwtToken()
+                    }
+
                 }
                 is NetworkResponse.Error -> {
                     _stateFlow.value = _stateFlow.value.copy(
@@ -362,13 +367,15 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
 
-            when (val result = paymentUseCase.createNewJwtToken("${BuildConfig.BASE_URL}/payment/jwt/$cartId",
-                CreateJwtTokenRequest("8d1cbffb-1e18-4e1e-9aca-b3dc842de74e","0211206300112063","240419","0211206300112063"))) {
+            when (val result = paymentUseCase.createNewJwtToken(
+                CreateJwtTokenRequest("49dd0618-aa6a-444d-a76d-cae53080464c","0211317900113179","041924","0211317900113179"))) {
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false,
                     )
+                    preferencesManager.saveJwtToken(result.data.token)
                     loadingManager.hide()
+                    createNewNearPaySession()
                 }
                 is NetworkResponse.Error -> {
                     _stateFlow.value = _stateFlow.value.copy(
@@ -386,7 +393,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
 
-            when (val result = paymentUseCase.createNearPaySession("${BuildConfig.BASE_URL}/payment/session/$cartId")) {
+            when (val result = paymentUseCase.createNearPaySession()) {
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false,
