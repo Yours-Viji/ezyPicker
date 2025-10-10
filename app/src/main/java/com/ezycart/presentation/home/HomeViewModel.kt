@@ -335,11 +335,11 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-    fun makePayment() {
+    fun makePayment(type:Int) {
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             _priceDetails.value = null
-            when (val result = shoppingUseCase.makePayment(getPaymentRequest())) {
+            when (val result = shoppingUseCase.makePayment(if(type==1)getPaymentRequest() else getTapToPayPaymentRequest())) {
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
@@ -418,6 +418,9 @@ class HomeViewModel @Inject constructor(
 
     private fun getPaymentRequest(): PaymentRequest {
        return PaymentRequest("DUITNOW","DUITNOW@123456789")
+    }
+    private fun getTapToPayPaymentRequest(): PaymentRequest {
+        return PaymentRequest("HLB","HLB@123456789")
     }
 
 }

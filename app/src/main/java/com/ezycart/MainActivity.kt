@@ -49,7 +49,7 @@ import javax.inject.Inject
 class MyApp : Application()
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), NearPaymentListener {
+class MainActivity : ComponentActivity(){
     @Inject
     lateinit var loadingManager: LoadingManager
     @Inject
@@ -141,9 +141,10 @@ class MainActivity : ComponentActivity(), NearPaymentListener {
                                             nearPayService.initializeSdk(this@MainActivity)
                                             nearPayService.paymentSdkSetUp()
                                         },
-                                        makeNearPayment={ reference, amount->
-                                            nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = this@MainActivity)
+                                        makeNearPayment={ reference, amount,nearPaymentListener->
+                                            nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = nearPaymentListener)
                                         },
+
                                         onLogout = {
                                             lifecycleScope.launch {
                                                 splashViewModel.clearUserPreference()
@@ -184,7 +185,7 @@ class MainActivity : ComponentActivity(), NearPaymentListener {
             navigate("webview/error")
         }
     }
-    override fun onPaymentSuccess(transactionData: TransactionData) {
+   /* override fun onPaymentSuccess(transactionData: TransactionData) {
         runOnUiThread {
             nearPayResult(true, transactionData)
         }
@@ -195,7 +196,7 @@ class MainActivity : ComponentActivity(), NearPaymentListener {
             // Handle payment failure
             Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
         }
-    }
+    }*/
     fun nearPayResult(status: Boolean, transactionData: TransactionData) {
         CoroutineScope(Dispatchers.Main).launch {
             delay(3000)

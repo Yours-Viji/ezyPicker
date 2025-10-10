@@ -129,6 +129,7 @@ import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
+import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
@@ -137,6 +138,7 @@ import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
+import io.nearpay.sdk.utils.enums.TransactionData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -151,7 +153,7 @@ fun HomeScreen(
 
     onThemeChange: () -> Unit,
     onPaymentInitialize: () -> Unit,
-    makeNearPayment:(String, String)->Unit,
+    makeNearPayment:(String, String,NearPaymentListener?)->Unit,
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
@@ -172,6 +174,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     var showQrDialog = remember { mutableStateOf(false) }
     var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+    val showErrorMessage = remember { mutableStateOf("") }
     val context = LocalContext.current
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -189,10 +192,23 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
             showDialog.value = true
         }
     }
+    if (showErrorMessage.value.isNotEmpty()) {
+        DynamicToast.makeError(context, showErrorMessage.value).show()
+    }
+
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
             val finalAmount= it?.finalAmount ?: 0.0
-            makeNearPayment("12345","$finalAmount")
+            makeNearPayment("12345","$finalAmount",object : NearPaymentListener {
+                override fun onPaymentSuccess(transactionData: TransactionData) {
+                    viewModel.makePayment(2)
+                }
+
+                override fun onPaymentFailed(error: String) {
+                    showErrorMessage.value = error
+                   // Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
+                }
+            })
             proceedTapToPay.value=false
         }
     }
@@ -204,7 +220,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                 qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
                 onDismiss = {
                     showQrDialog.value = false
-                    viewModel.makePayment()
+                    viewModel.makePayment(1)
                 }
             )
         }
