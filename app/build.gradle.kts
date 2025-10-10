@@ -29,8 +29,8 @@ android {
     productFlavors {
         create("malaysia") {
             dimension = "country"
-            applicationIdSuffix = ".my"
-            versionNameSuffix = "-my"
+          //  applicationIdSuffix = ".my"
+           // versionNameSuffix = "-my"
             // Set default values that can be overridden in build types
             buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"RM\"")
@@ -40,8 +40,8 @@ android {
 
         create("saudi") {
             dimension = "country"
-            applicationIdSuffix = ".sa"
-            versionNameSuffix = "-sa"
+           // applicationIdSuffix = ".sa"
+           // versionNameSuffix = "-sa"
             buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"SAR\"")
             buildConfigField("String", "ACTIVATION_CODE", "\"ALpxvcc0022\"")
@@ -51,8 +51,8 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+           // applicationIdSuffix = ".debug"
+          //  versionNameSuffix = "-debug"
             // You can override values for debug builds if needed
             buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
         }

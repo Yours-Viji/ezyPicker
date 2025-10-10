@@ -366,7 +366,7 @@ class HomeViewModel @Inject constructor(
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
 
             when (val result = paymentUseCase.createNewJwtToken(
-                CreateJwtTokenRequest("49dd0618-aa6a-444d-a76d-cae53080464c","0211317900113179","041924","0211317900113179"))) {
+                CreateJwtTokenRequest("8d1cbffb-1e18-4e1e-9aca-b3dc842de74e","0211206300112063","240419","0211206300112063"))) {
                 is NetworkResponse.Success -> {
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false,
@@ -398,6 +398,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false,
                         isReadyToInitializePaymentSdk = true
                     )
+
                     loadingManager.hide()
                 }
                 is NetworkResponse.Error -> {

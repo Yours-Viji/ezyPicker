@@ -159,6 +159,7 @@ class AuthRepositoryImpl @Inject constructor(
         return safeApiCallRaw { authApi.createPaymentSessionUsingJwtToken(authToken = preferencesManager.getJwtToken(), cartId = preferencesManager.getShoppingCartId()) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
+                    Constants.nearPaySessionID=result.data.sessionId
                 }
             }
     }
