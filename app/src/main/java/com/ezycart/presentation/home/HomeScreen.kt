@@ -465,7 +465,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
                     ) {
 
 
-                        var selected = remember { mutableStateOf("Arivu-ID1234-05-Sep") }
+                        var selected = remember { mutableStateOf("Arivu-ID12345678") }
 
                         RoundedDropdownSpinner(
                             items = listOf(
@@ -478,15 +478,15 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
                         )
 
                         val groceries = listOf(
-                            "Milk",
-                            "Bread",
-                            "Eggs",
-                            "Rice",
-                            "COCON YOGO",
-                            "Apples",
-                            "Tomatoes",
-                            "Cheese",
-                            "Chicken"
+                            "MAGGI CHILI SAUCE 340G",
+                            "MAGGI CURRY 5X79G",
+                            "CLOROX CLN UP LVNDER 2LT",
+                            "PLANTA MARGARINE 1KG",
+                            "DETTOL 4IN1 CITRUS 1.5L+33%",
+                            "SEDAAP MIE GORENG AYAM KRISPI 5*88G",
+                            "NESTLE CERELAC RICE MIXED VEGE 250G",
+                            "HEINZ FULL OF BEANZ 415G",
+                            "DAISY MARJERIN 480GM"
                         )
 
                         ProductPickList(items = groceries,cartItems = cartDataList.value)

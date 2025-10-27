@@ -50,7 +50,7 @@ class HomeViewModel @Inject constructor(
     private val _priceDetails = MutableStateFlow<ProductPriceInfo?>(null)
     val priceDetails: StateFlow<ProductPriceInfo?> = _priceDetails.asStateFlow()
 
-    private val _isPickerModel = MutableStateFlow<Boolean>(false)
+    private val _isPickerModel = MutableStateFlow<Boolean>(true)
     val isPickerModel: StateFlow<Boolean> = _isPickerModel.asStateFlow()
 
     private val _canShowPriceChecker = MutableStateFlow<Boolean>(true)
