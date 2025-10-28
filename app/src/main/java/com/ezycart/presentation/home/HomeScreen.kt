@@ -469,9 +469,9 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
 
                         RoundedDropdownSpinner(
                             items = listOf(
-                                "Arivu-ID1234-05-Sep",
-                                "Nava-ID1234-05-Sep",
-                                "Azizi-ID1234-05-Sep"
+                                "Arivu-ID12345678",
+                                "Nava-ID1234-28-Oct",
+                                "Azizi-ID1234-28-Oct"
                             ),
                             selectedItem = selected.value,
                             onItemSelected = { selected.value = it }
@@ -1325,14 +1325,85 @@ fun RoundedDropdownSpinner(
     }
 }
 
-private fun normalize(s: String): String {
+/*private fun normalize(s: String): String {
     return s.lowercase(Locale.getDefault())
         .replace(Regex("[^a-z0-9\\s]"), " ")
         .replace(Regex("\\s+"), " ")
         .trim()
-}
+}*/
 
 @Composable
+fun ProductPickList(
+    items: List<String>,
+    cartItems: List<CartItem> // pass from ViewModel
+) {
+    // Precompute normalized cart product names once per cartItems change
+    val normalizedCart = remember(cartItems) {
+        cartItems.map { normalize(it.productName) }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(items) { index, name ->
+            val normName = normalize(name)
+
+            // Exact match only - check if the normalized name exists exactly in cart
+            val isSelected = normalizedCart.any { cart ->
+                cart == normName
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Count
+                Text(
+                    text = "${index + 1}.",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.weight(0.2f)
+                )
+
+                // Name with strikethrough when matched
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        textDecoration = if (isSelected) TextDecoration.LineThrough else TextDecoration.None,
+                        color = if (isSelected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Read-only checkbox that reflects cart membership
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = {},
+                    enabled = true,
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color(0xFF2E7D32),
+                        uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        checkmarkColor = Color.White
+                    )
+                )
+            }
+        }
+    }
+}
+
+// Your normalize function (make sure it's consistent)
+private fun normalize(text: String): String {
+    return text.trim().lowercase()
+}
+/*@Composable
 fun ProductPickList(
     items: List<String>,
     cartItems: List<CartItem> // pass from ViewModel
@@ -1410,7 +1481,7 @@ fun ProductPickList(
             }
         }
     }
-}
+}*/
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
