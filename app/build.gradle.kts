@@ -54,9 +54,9 @@ android {
            // applicationIdSuffix = ".debug"
           //  versionNameSuffix = "-debug"
             // You can override values for debug builds if needed
-            //buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
+            buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
            // buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
-            buildConfigField("String", "BASE_URL", "\"http://172.16.21.16:8086\"")
+           // buildConfigField("String", "BASE_URL", "\"http://172.16.21.16:8086\"")
         }
         release {
             isMinifyEnabled = true
