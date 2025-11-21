@@ -138,11 +138,11 @@ class MainActivity : ComponentActivity(){
                                             //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
                                         },
                                         onPaymentInitialize = {
-                                            nearPayService.initializeSdk(this@MainActivity)
-                                            nearPayService.paymentSdkSetUp()
+                                          //  nearPayService.initializeSdk(this@MainActivity)
+                                          //  nearPayService.paymentSdkSetUp()
                                         },
                                         makeNearPayment={ reference, amount,nearPaymentListener->
-                                            nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = nearPaymentListener)
+                                           // nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = nearPaymentListener)
                                         },
 
                                         onLogout = {

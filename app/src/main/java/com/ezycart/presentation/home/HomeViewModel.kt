@@ -178,10 +178,10 @@ class HomeViewModel @Inject constructor(
                     )
                     _shoppingCartInfo.value=result.data
                     loadingManager.hide()
-                    if(!isJwtTokenCreated){
+                  /*  if(!isJwtTokenCreated){
                         isJwtTokenCreated = true
                         createNewJwtToken()
-                    }
+                    }*/
 
                 }
                 is NetworkResponse.Error -> {
