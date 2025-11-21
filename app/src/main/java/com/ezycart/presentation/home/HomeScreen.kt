@@ -76,6 +76,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -128,6 +129,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -178,6 +183,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     // Correct way to declare the state
     val wavPayQrPaymentUrl = viewModel.wavPayQrPaymentUrl.collectAsState()
     var showQrDialog = viewModel.canShowQrPaymentDialog.collectAsState()
+    var showPaymentSuccessDialog = viewModel.canShowPaymentSuccessDialog.collectAsState()
     var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
@@ -231,6 +237,18 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
             )
             viewModel.startWavPayQrPaymentStatusPolling()
         }
+    }
+    if (showPaymentSuccessDialog.value) {
+        PaymentSuccessAlert(
+            onSendReceipt = {
+                // Handle send receipt logic
+                println("Receipt sent!")
+                viewModel.hidePaymentSuccessAlertView()
+            },
+            onDismiss = {
+                viewModel.hidePaymentSuccessAlertView()
+            }
+        )
     }
     if (showDialog.value) {
         var lastClickTime = 0L
@@ -2716,6 +2734,97 @@ fun QrPaymentAlert(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
+        }
+    }
+}
+
+@Composable
+fun PaymentSuccessAlert(
+    onSendReceipt: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timerComposition by rememberLottieComposition(LottieCompositionSpec.Asset("anim_success_3.json"))
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(400.dp)
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Lottie Animation
+            Box(
+                modifier = Modifier.size(150.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = timerComposition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier.size(100.dp)
+                )
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Success Text
+            Text(
+                text = "Payment Successful!",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF00C853), // Green color for success
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Your payment has been processed successfully",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Send Receipt Button
+            Button(
+                onClick = onSendReceipt,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00C853), // Green color
+                    contentColor = Color.White
+                )
+            ) {
+                Text(
+                    text = "Send Receipt",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Close Button
+           /* TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Close",
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+            }*/
         }
     }
 }

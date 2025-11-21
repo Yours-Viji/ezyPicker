@@ -70,10 +70,13 @@ class HomeViewModel @Inject constructor(
     private val _canShowQrPaymentDialog = MutableStateFlow<Boolean>(false)
     val canShowQrPaymentDialog: StateFlow<Boolean> = _canShowQrPaymentDialog.asStateFlow()
 
+    private val _canShowPaymentSuccessDialog = MutableStateFlow<Boolean>(false)
+    val canShowPaymentSuccessDialog: StateFlow<Boolean> = _canShowPaymentSuccessDialog.asStateFlow()
+
     private var pollingJob: Job? = null
     private val _paymentStatusState = MutableStateFlow<PaymentStatusState>(PaymentStatusState.Idle)
     val paymentStatusState: StateFlow<PaymentStatusState> = _paymentStatusState.asStateFlow()
-
+var tempcounter =0
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -465,6 +468,9 @@ class HomeViewModel @Inject constructor(
             _paymentStatusState.value = PaymentStatusState.Polling
             pollPaymentStatusRecursively()
         }
+
+        _canShowQrPaymentDialog.value = false
+        _canShowPaymentSuccessDialog.value = true
     }
 
     fun stopPaymentStatusPolling() {
@@ -478,26 +484,29 @@ class HomeViewModel @Inject constructor(
             when (val result = paymentUseCase.getWavPayQRPaymentStatus()) {
                 is NetworkResponse.Success -> {
                     // Check if payment is successful
-                    if (result.data.statusMessage == "Success" && result.data.status == "100") {
+                    if (result.data.status == "100") {
                         // Payment successful - stop polling
                         _paymentStatusState.value = PaymentStatusState.Success(result.data)
-                        _canShowQrPaymentDialog.value = false
-                        return // Stop recursion
-                    }
-                    // Check if payment failed
-                    else if (result.data.status == "failed" || result.data.statusMessage == "Failed") {
-                        // Payment failed - stop polling
-                        _paymentStatusState.value = PaymentStatusState.Error("Payment failed")
-                        _canShowQrPaymentDialog.value = false
+                        _canShowPaymentSuccessDialog.value = true
                         return // Stop recursion
                     }
                     // Payment still pending - continue polling
-                    else {
+
+                    else if (result.data.status == "NOT FOUND") {
+
                         _paymentStatusState.value = PaymentStatusState.Polling
                         // Wait for 2 seconds before next call
                         delay(2000)
                         // Recursive call
                         pollPaymentStatusRecursively()
+
+                    }
+                    //  if payment failed
+                    else {
+                        _paymentStatusState.value = PaymentStatusState.Error("Payment Failed")
+                        _canShowPaymentSuccessDialog.value = false
+                        //Show Payment Error message
+                        return // Stop recursion
                     }
                 }
                 is NetworkResponse.Error -> {
@@ -528,6 +537,10 @@ class HomeViewModel @Inject constructor(
         _canShowQrPaymentDialog.value=false
         stopPaymentStatusPolling()
 
+    }
+    fun hidePaymentSuccessAlertView(){
+        _canShowPaymentSuccessDialog.value=false
+// Send receipt
     }
     private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {
         return UpdatePaymentRequest(reference,"100","Approved")
