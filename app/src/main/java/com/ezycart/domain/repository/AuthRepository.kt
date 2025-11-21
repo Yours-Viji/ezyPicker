@@ -11,6 +11,9 @@ import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.data.remote.dto.UpdatePaymentRequest
+import com.ezycart.data.remote.dto.WavPayQrPaymentRequest
+import com.ezycart.data.remote.dto.WavPayQrPaymentStatus
+import com.ezycart.data.remote.dto.WavPayQrResponse
 import com.ezycart.model.CartActivationResponse
 import com.ezycart.model.EmployeeLoginResponse
 import com.ezycart.model.ProductInfo
@@ -34,6 +37,8 @@ interface AuthRepository {
     suspend fun makePayment(paymentRequest: PaymentRequest): NetworkResponse<PaymentResponse>
     suspend fun createJwtToken(jwtTokenRequest: CreateJwtTokenRequest): NetworkResponse<JwtTokenResponse>
     suspend fun createNearPaySession(): NetworkResponse<NearPaymentSessionResponse>
+    suspend fun initWavPayQRPayment(): NetworkResponse<WavPayQrResponse>
+    suspend fun getWavPayQRPaymentStatus(): NetworkResponse<WavPayQrPaymentStatus>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
     //suspend fun refreshInterceptor()

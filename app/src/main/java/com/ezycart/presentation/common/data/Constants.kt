@@ -55,4 +55,5 @@ object Constants {
     var employeeToken = ""
     var jwtToken = ""
     var nearPaySessionID = ""
+    var paymentOrderId = ""
 }

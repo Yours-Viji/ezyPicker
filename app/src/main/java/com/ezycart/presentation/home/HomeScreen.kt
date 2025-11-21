@@ -61,6 +61,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -93,6 +94,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
@@ -118,6 +120,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -143,6 +146,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URL
 import java.util.Locale
 
 @SuppressLint("SuspiciousIndentation")
@@ -171,7 +176,8 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val appMode by viewModel.appMode.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
-    var showQrDialog = remember { mutableStateOf(false) }
+    val wavPayQrPaymentUrl = viewModel.wavPayQrPaymentUrl.collectAsState()
+    var showQrDialog = viewModel.canShowQrPaymentDialog.collectAsState()
     var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
@@ -215,14 +221,15 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     if (showQrDialog.value) {
         shoppingCartInfo.value.let {
             val finalAmount= it?.finalAmount ?: 0.0
-            QrPaymentAlert(
-                amount = "$finalAmount",
-                qrPainter = painterResource(id = R.drawable.baseline_qr_code_2_24), // replace with your QR
+            QRPaymentAlert(
+                qrCodeUrl = wavPayQrPaymentUrl.value,
+                paymentAmount = "${Constants.currencySymbol} $finalAmount",
                 onDismiss = {
-                    showQrDialog.value = false
-                    viewModel.makePayment(1)
+                    viewModel.hideQrPaymentAlertView()
+                    viewModel.stopPaymentStatusPolling()
                 }
             )
+            viewModel.startWavPayQrPaymentStatusPolling()
         }
     }
     if (showDialog.value) {
@@ -364,7 +371,8 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                         Text("Mock Enter Key")
                     }*/
                     PickersShoppingScreen(viewModel, onQrPaymentClick = {
-                        showQrDialog.value = true
+                        viewModel.initWavPayQrPayment()
+
                     },onTapToPayClick = {
                         proceedTapToPay.value=true
                     })
@@ -2516,7 +2524,140 @@ fun BackPressHandler(onBackPressed: () -> Unit) {
         }
     }
 }
+@Composable
+fun QRPaymentAlert(
+    qrCodeUrl: String,
+    paymentAmount: String,
+    onDismiss: () -> Unit
+) {
+    var isLoading = remember { mutableStateOf(true) }
+    var loadingError = remember { mutableStateOf(false) }
 
+    Dialog(
+        onDismissRequest = { /* Do nothing - prevent closing on outside touch */ },
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(500.dp) // Fixed width
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Text(
+                text = "Scan to Pay",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Amount Display
+            Text(
+                text = "Amount to Pay",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            Text(
+                text = paymentAmount,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 20.dp)
+            )
+
+            // QR Code
+            Box(
+                modifier = Modifier
+                    .size(300.dp) // Adjusted to fit in 280dp container
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLoading.value) {
+                    CircularProgressIndicator(
+                        color = Color.Black,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                if (loadingError.value) {
+                    Text(
+                        text = "Failed to load QR",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
+
+                AndroidView(
+                    factory = { context ->
+                        WebView(context).apply {
+                            settings.javaScriptEnabled = false
+                            settings.loadWithOverviewMode = true
+                            settings.useWideViewPort = true
+                            settings.builtInZoomControls = false
+                            settings.displayZoomControls = false
+
+                            webViewClient = object : WebViewClient() {
+                                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                    isLoading.value = true
+                                    loadingError.value = false
+                                }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    isLoading.value = false
+                                }
+
+                                override fun onReceivedError(
+                                    view: WebView?,
+                                    errorCode: Int,
+                                    description: String?,
+                                    failingUrl: String?
+                                ) {
+                                    isLoading.value = false
+                                    loadingError.value = true
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(300.dp),
+                    update = { webView ->
+                        if (webView.url != qrCodeUrl) {
+                            webView.loadUrl(qrCodeUrl)
+                        }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Cancel Button
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp)
+            ) {
+                Text(
+                    text = "Cancel Payment",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
+}
 @Composable
 fun QrPaymentAlert(
     amount: String,

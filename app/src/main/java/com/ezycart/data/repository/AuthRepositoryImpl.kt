@@ -164,6 +164,24 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun initWavPayQRPayment(): NetworkResponse<WavPayQrResponse> {
+        return safeApiCallRaw { authApi.initWavPayQRPayment(WavPayQrPaymentRequest("WAVPAY","WAVPAY@1234567890")) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    Constants.paymentOrderId=result.data.order_id
+                }
+            }
+    }
+
+    override suspend fun getWavPayQRPaymentStatus(): NetworkResponse<WavPayQrPaymentStatus> {
+        return safeApiCallRaw { authApi.getWavPayQRPaymentStatus(orderId = Constants.paymentOrderId) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()

@@ -17,6 +17,9 @@ import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.data.remote.dto.UpdatePaymentRequest
+import com.ezycart.data.remote.dto.WavPayQrPaymentRequest
+import com.ezycart.data.remote.dto.WavPayQrPaymentStatus
+import com.ezycart.data.remote.dto.WavPayQrResponse
 import com.ezycart.model.CartActivationRequest
 import com.ezycart.model.CartActivationResponse
 import com.ezycart.model.EmployeeLoginRequest
@@ -66,7 +69,8 @@ interface AuthApi {
         @QueryMap params: Map<String, String>
     ): Response<ProductInfo>
 
-    @GET("/search/product/price/{product_qr_code}")
+    //@GET("/search/product/price/{product_qr_code}")
+    @GET("/search/product/v1/price/{product_qr_code}")
     suspend fun searchPriceInfo(
         @Path(value = "product_qr_code", encoded = true) productQrCode: String,
         @QueryMap params: Map<String, String>
@@ -115,6 +119,14 @@ interface AuthApi {
         @Header("jwt-Authorization") authToken: String,
         @Path(value = "cart_Id", encoded = true) cartId: String
     ): Response<NearPaymentSessionResponse>
+
+    @POST("/ezyCart/payment")
+    suspend fun initWavPayQRPayment(
+       @Body wavPayQrPaymentRequest: WavPayQrPaymentRequest): Response<WavPayQrResponse>
+
+    @GET("ezyCart/payment/{order_Id}/status")
+    suspend fun getWavPayQRPaymentStatus(
+        @Path(value = "order_Id", encoded = true) orderId: String): Response<WavPayQrPaymentStatus>
 
     /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>

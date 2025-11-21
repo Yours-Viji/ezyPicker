@@ -17,6 +17,8 @@ import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,6 +63,24 @@ class HomeViewModel @Inject constructor(
 
     private val _employeeName = MutableStateFlow("")
     val employeeName: StateFlow<String> = _employeeName.asStateFlow()
+
+    private val _wavPayQrPaymentUrl = MutableStateFlow("")
+    val wavPayQrPaymentUrl: StateFlow<String> = _wavPayQrPaymentUrl.asStateFlow()
+
+    private val _canShowQrPaymentDialog = MutableStateFlow<Boolean>(false)
+    val canShowQrPaymentDialog: StateFlow<Boolean> = _canShowQrPaymentDialog.asStateFlow()
+
+    private var pollingJob: Job? = null
+    private val _paymentStatusState = MutableStateFlow<PaymentStatusState>(PaymentStatusState.Idle)
+    val paymentStatusState: StateFlow<PaymentStatusState> = _paymentStatusState.asStateFlow()
+
+    sealed class PaymentStatusState {
+        object Idle : PaymentStatusState()
+        object Loading : PaymentStatusState()
+        data class Success(val data: Any) : PaymentStatusState()
+        data class Error(val message: String) : PaymentStatusState()
+        object Polling : PaymentStatusState()
+    }
 
     var cartId = ""
     var isJwtTokenCreated =false
@@ -412,6 +432,103 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+
+    fun initWavPayQrPayment() {
+        loadingManager.show()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+            when (val result = paymentUseCase.initWavPayQRPayment()) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                    )
+                    _wavPayQrPaymentUrl.value=result.data.qr_code
+                    _canShowQrPaymentDialog.value=true
+                    loadingManager.hide()
+                }
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message ?: "Unable to start wavpay QR payment",
+                    )
+                    loadingManager.hide()
+                }
+            }
+        }
+    }
+
+    fun startWavPayQrPaymentStatusPolling() {
+        stopPaymentStatusPolling()
+
+        pollingJob = viewModelScope.launch {
+            _paymentStatusState.value = PaymentStatusState.Polling
+            pollPaymentStatusRecursively()
+        }
+    }
+
+    fun stopPaymentStatusPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
+        _paymentStatusState.value = PaymentStatusState.Idle
+    }
+
+    private suspend fun pollPaymentStatusRecursively() {
+        try {
+            when (val result = paymentUseCase.getWavPayQRPaymentStatus()) {
+                is NetworkResponse.Success -> {
+                    // Check if payment is successful
+                    if (result.data.statusMessage == "Success" && result.data.status == "100") {
+                        // Payment successful - stop polling
+                        _paymentStatusState.value = PaymentStatusState.Success(result.data)
+                        _canShowQrPaymentDialog.value = false
+                        return // Stop recursion
+                    }
+                    // Check if payment failed
+                    else if (result.data.status == "failed" || result.data.statusMessage == "Failed") {
+                        // Payment failed - stop polling
+                        _paymentStatusState.value = PaymentStatusState.Error("Payment failed")
+                        _canShowQrPaymentDialog.value = false
+                        return // Stop recursion
+                    }
+                    // Payment still pending - continue polling
+                    else {
+                        _paymentStatusState.value = PaymentStatusState.Polling
+                        // Wait for 2 seconds before next call
+                        delay(2000)
+                        // Recursive call
+                        pollPaymentStatusRecursively()
+                    }
+                }
+                is NetworkResponse.Error -> {
+                    // API error but continue polling
+                    _paymentStatusState.value = PaymentStatusState.Error(
+                        result.message ?: "Unable to get payment status"
+                    )
+                    // Wait for 2 seconds before retry
+                    delay(2000)
+                    // Recursive call to retry
+                    pollPaymentStatusRecursively()
+                }
+            }
+        } catch (e: Exception) {
+            // Handle coroutine cancellation
+            if (e is kotlinx.coroutines.CancellationException) {
+                throw e // Re-throw cancellation to properly stop
+            }
+            // Other exceptions - continue polling
+            _paymentStatusState.value = PaymentStatusState.Error("Network error: ${e.message}")
+            delay(2000)
+            pollPaymentStatusRecursively()
+        }
+    }
+
+
+    fun hideQrPaymentAlertView(){
+        _canShowQrPaymentDialog.value=false
+        stopPaymentStatusPolling()
+
+    }
     private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {
         return UpdatePaymentRequest(reference,"100","Approved")
     }
