@@ -165,7 +165,8 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun initWavPayQRPayment(): NetworkResponse<WavPayQrResponse> {
-        return safeApiCallRaw { authApi.initWavPayQRPayment(WavPayQrPaymentRequest("WAVPAY","WAVPAY@1234567890")) }
+        return safeApiCallRaw { authApi.initWavPayQRPayment(WavPayQrPaymentRequest("WAVPAY","WAVPAY@1234567890",
+            Constants.paymentCode)) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
                     Constants.paymentOrderId=result.data.order_id

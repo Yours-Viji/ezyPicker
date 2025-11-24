@@ -16,6 +16,7 @@ import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
+import com.ezycart.presentation.common.data.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -70,6 +71,9 @@ class HomeViewModel @Inject constructor(
     private val _canShowQrPaymentDialog = MutableStateFlow<Boolean>(false)
     val canShowQrPaymentDialog: StateFlow<Boolean> = _canShowQrPaymentDialog.asStateFlow()
 
+    private val _canShowPaymentErrorDialog = MutableStateFlow<Boolean>(false)
+    val canShowPaymentErrorDialog: StateFlow<Boolean> = _canShowPaymentErrorDialog.asStateFlow()
+
     private val _canShowPaymentSuccessDialog = MutableStateFlow<Boolean>(false)
     val canShowPaymentSuccessDialog: StateFlow<Boolean> = _canShowPaymentSuccessDialog.asStateFlow()
 
@@ -97,6 +101,7 @@ var tempcounter =0
         }
 
     }
+
     fun setPriceCheckerView(canShow: Boolean){
         viewModelScope.launch {
             preferencesManager.setPriceCheckerStatus(canShow)
@@ -436,7 +441,8 @@ var tempcounter =0
     }
 
 
-    fun initWavPayQrPayment() {
+    fun initWavPayQrPayment(barCode:String) {
+        Constants.paymentCode = barCode
         loadingManager.show()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
@@ -447,7 +453,8 @@ var tempcounter =0
                         isLoading = false,
                     )
                     _wavPayQrPaymentUrl.value=result.data.qr_code
-                    _canShowQrPaymentDialog.value=true
+                  //  _canShowQrPaymentDialog.value=true
+                    startWavPayQrPaymentStatusPolling()
                     loadingManager.hide()
                 }
                 is NetworkResponse.Error -> {
@@ -469,8 +476,8 @@ var tempcounter =0
             pollPaymentStatusRecursively()
         }
 
-        _canShowQrPaymentDialog.value = false
-        _canShowPaymentSuccessDialog.value = true
+      /*  _canShowQrPaymentDialog.value = false
+        _canShowPaymentSuccessDialog.value = true*/
     }
 
     fun stopPaymentStatusPolling() {
@@ -503,8 +510,9 @@ var tempcounter =0
                     }
                     //  if payment failed
                     else {
-                        _paymentStatusState.value = PaymentStatusState.Error("Payment Failed")
+                        _paymentStatusState.value = PaymentStatusState.Error("Payment Failed, Please Try Again")
                         _canShowPaymentSuccessDialog.value = false
+                        _canShowPaymentErrorDialog.value = true
                         //Show Payment Error message
                         return // Stop recursion
                     }
@@ -540,6 +548,10 @@ var tempcounter =0
     }
     fun hidePaymentSuccessAlertView(){
         _canShowPaymentSuccessDialog.value=false
+// Send receipt
+    }
+    fun hidePaymentErrorAlertView(){
+        _canShowPaymentErrorDialog.value=false
 // Send receipt
     }
     private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {

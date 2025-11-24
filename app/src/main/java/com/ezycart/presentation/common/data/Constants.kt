@@ -56,4 +56,5 @@ object Constants {
     var jwtToken = ""
     var nearPaySessionID = ""
     var paymentOrderId = ""
+    var paymentCode = ""
 }

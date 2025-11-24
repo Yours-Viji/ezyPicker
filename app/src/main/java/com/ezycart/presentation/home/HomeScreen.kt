@@ -184,9 +184,11 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val wavPayQrPaymentUrl = viewModel.wavPayQrPaymentUrl.collectAsState()
     var showQrDialog = viewModel.canShowQrPaymentDialog.collectAsState()
     var showPaymentSuccessDialog = viewModel.canShowPaymentSuccessDialog.collectAsState()
+    var showPaymentErrorDialog = viewModel.canShowPaymentErrorDialog.collectAsState()
     var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
+    val showWalletScanner = remember { mutableStateOf(false) }
     val context = LocalContext.current
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -244,9 +246,23 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                 // Handle send receipt logic
                 println("Receipt sent!")
                 viewModel.hidePaymentSuccessAlertView()
+                viewModel.initNewShopping()
             },
             onDismiss = {
                 viewModel.hidePaymentSuccessAlertView()
+            }
+        )
+    }
+    if (showPaymentErrorDialog.value) {
+        PaymentFailureAlert (
+            onRetry = {
+                viewModel.hidePaymentSuccessAlertView()
+                viewModel.hidePaymentErrorAlertView()
+                showWalletScanner.value = true
+
+            },
+            onDismiss = {
+                viewModel.hidePaymentErrorAlertView()
             }
         )
     }
@@ -268,7 +284,20 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
         }
         focusRequester.requestFocus()
     }
+    if (showWalletScanner.value) {
+        BarcodeScannerDialog(
+            onDismiss = { showWalletScanner.value = false },
+            onBarcodeScanned = {
+                viewModel.initWavPayQrPayment(it)
 
+                /*scannedCode.value = it
+                viewModel.resetProductInfoDetails()
+                viewModel.getProductDetails(scannedCode.value.toString())
+                // scannerViewModel.onScanned(scannedCode.value.toString())*/
+                showWalletScanner.value = false
+            }
+        )
+    }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         viewModel.initNewShopping()
@@ -286,6 +315,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                             if (scanBuffer.value.isNotBlank()) {
                                 viewModel.resetProductInfoDetails()
                                 viewModel.getProductDetails(scanBuffer.value)
+
                                 scanBuffer.value = ""
                             }
                             true
@@ -389,7 +419,8 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
                         Text("Mock Enter Key")
                     }*/
                     PickersShoppingScreen(viewModel, onQrPaymentClick = {
-                        viewModel.initWavPayQrPayment()
+                        showWalletScanner.value = true
+                       // viewModel.initWavPayQrPayment()
 
                     },onTapToPayClick = {
                         proceedTapToPay.value=true
@@ -2814,17 +2845,86 @@ fun PaymentSuccessAlert(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Close Button
-           /* TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
+        }
+    }
+}
+
+@Composable
+fun PaymentFailureAlert(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timerComposition by rememberLottieComposition(LottieCompositionSpec.Asset("anim_wrong.json"))
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(400.dp)
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Lottie Animation
+            Box(
+                modifier = Modifier.size(150.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = timerComposition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier.size(100.dp)
+                )
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Success Text
+            Text(
+                text = "Payment Failed!",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.Red, // Green color for success
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Please Try Again!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Send Receipt Button
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00C853), // Green color
+                    contentColor = Color.White
+                )
             ) {
                 Text(
-                    text = "Close",
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
+                    text = "Retry Again",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
                 )
-            }*/
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
         }
     }
 }
