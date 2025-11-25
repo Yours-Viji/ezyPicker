@@ -56,7 +56,7 @@ class HomeViewModel @Inject constructor(
     private val _isPickerModel = MutableStateFlow<Boolean>(false)
     val isPickerModel: StateFlow<Boolean> = _isPickerModel.asStateFlow()
 
-    private val _canShowPriceChecker = MutableStateFlow<Boolean>(true)
+    private val _canShowPriceChecker = MutableStateFlow<Boolean>(false)
     val canShowPriceChecker: StateFlow<Boolean> = _canShowPriceChecker.asStateFlow()
 
     private val _appMode = MutableStateFlow(AppMode.EzyLite)
