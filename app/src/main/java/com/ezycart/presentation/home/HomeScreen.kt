@@ -1227,7 +1227,7 @@ fun MyTopAppBar(
                 },
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Medium ,
-                    fontSize = if(isTablet) 10.sp else 12.sp,
+                    fontSize = if(isTablet) 16.sp else 12.sp,
                     color = Color.White
                 )
             )
