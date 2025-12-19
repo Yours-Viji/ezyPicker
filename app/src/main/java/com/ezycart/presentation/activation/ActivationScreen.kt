@@ -1,6 +1,11 @@
 package com.ezycart.presentation.activation
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,7 +33,12 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,9 +80,12 @@ fun ActivationScreen(
             ),
         )
     )
+    val context = LocalContext.current
+
+    FindDeviceConfiguration(context)
+
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     val isActivated = viewModel.isDeviceActivated.collectAsState()
 
@@ -98,12 +112,18 @@ fun ActivationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center // Centers the Column on Tablet
     ) {
+        // 2. The Main Form Column
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 350.dp),
+                // ADAPTIVE FIX START:
+                // This replaces the fixed '350.dp' padding.
+                // It fills width on Mobile, but stops growing at 480dp on Tablet.
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(),
+            // ADAPTIVE FIX END
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -112,62 +132,30 @@ fun ActivationScreen(
                 contentDescription = "EzyCart Logo",
                 modifier = Modifier.size(width = 250.dp, height = 80.dp)
             )
-            /*Text(
-                text = "By",
-                fontSize = 18.sp,
-                color = Color.Gray
-            )
-            Image(
-                painter = painterResource(id = R.drawable.ic_retailetics),
-                contentDescription = "EzyCart Logo",
-                modifier = Modifier.size(width = 250.dp, height = 40.dp)
-            )*/
 
             Spacer(modifier = Modifier.height(20.dp))
 
-          //  OutletSelectionDropdown()
-
-           // Spacer(modifier = Modifier.height(10.dp))
-
-          /*  OutlinedTextField(
-                value = state.trolleyNumber,
-                onValueChange = viewModel::onTrolleyNumberChange,
-                label = { Text("Trolley Number") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
-            )*/
-
-          //  Spacer(modifier = Modifier.height(10.dp))
-
             OutlinedTextField(
                 value = state.activationCode,
-                onValueChange = viewModel::onActivationCodeChange,
+                onValueChange = { viewModel.onActivationCodeChange(it) },
                 label = { Text("Activation Code") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             )
-           /* Spacer(modifier = Modifier.height(10.dp))
-            SingleSelectCheckboxes(
-                onSelectionChanged = viewModel::onAppModeChange,
-                selected = state.appMode
-            )*/
+
             Spacer(modifier = Modifier.height(20.dp))
+
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.padding(16.dp))
             } else {
-                // Login button
                 Button(
                     onClick = {
-                        if (state.activationCode.isEmpty()){
-                            DynamicToast.makeError(context, "Please enter a valid Activation Code").show();
-                        }
-                       /* else if (state.trolleyNumber.isEmpty()){
-                            DynamicToast.makeError(context, "Please enter a valid Trolley Number").show();
-                        }*/else{
+                        if (state.activationCode.isEmpty()) {
+                            DynamicToast.makeError(context, "Please enter a valid Activation Code").show()
+                        } else {
                             viewModel.activateDevice()
                             permissions.requestPermission()
                         }
-
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -180,7 +168,6 @@ fun ActivationScreen(
                 ) {
                     Text(text = "Activate", fontSize = 18.sp)
                 }
-
             }
 
             state.error?.let { error ->
@@ -190,14 +177,13 @@ fun ActivationScreen(
                     modifier = Modifier.padding(16.dp)
                 )
             }
-
-
         }
-        // "Powered By" section (aligned to bottom-end)
+
+        // 3. Footer "Powered By" (Stays at Bottom End)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 40.dp, end = 16.dp),
+                .padding(bottom = 20.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -212,7 +198,6 @@ fun ActivationScreen(
                 modifier = Modifier.size(width = 150.dp, height = 40.dp)
             )
         }
-
     }
 }
 
@@ -300,6 +285,55 @@ fun SingleSelectCheckboxes(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+fun FindDeviceConfiguration(context : Context){
+    val activity = context.findActivity()
+    if (activity !=null){
+        val windowSize = calculateWindowSizeClass(activity)
+
+        // Check: Is it wide AND tall? (This filters out rotated phones)
+        val isTablet = windowSize.widthSizeClass > WindowWidthSizeClass.Compact &&
+                windowSize.heightSizeClass > WindowHeightSizeClass.Compact
+
+        if (isTablet) {
+            Toast.makeText(context,"Tablet", Toast.LENGTH_SHORT).show()
+            // Lock Tablet to Landscape
+            LockScreenOrientation(activity,ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+        } else {
+            Toast.makeText(context,"Mobile", Toast.LENGTH_SHORT).show()
+            // Lock Phone to Portrait
+            LockScreenOrientation(activity,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        }
+    }
+}
+
+@Composable
+fun LockScreenOrientation(activity : Activity,orientation: Int) {
+    DisposableEffect(Unit) {
+            // 1. Remember original orientation
+            val originalOrientation = activity.requestedOrientation
+
+            // 2. Lock the new orientation
+            activity.requestedOrientation = orientation
+
+            // 3. Unlock/Restore when leaving
+            onDispose {
+                activity.requestedOrientation = originalOrientation
+            }
+    }
+}
+
+// Helper extension to find the Activity from any Context
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
 }
 
 
