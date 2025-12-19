@@ -2,6 +2,10 @@ package com.ezycart.presentation.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.util.Log
 import android.util.Size
@@ -82,6 +86,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -139,6 +147,7 @@ import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.ScannerViewModel
+import com.ezycart.presentation.activation.FindDeviceConfiguration
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.data.Constants
@@ -189,7 +198,11 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
     val showWalletScanner = remember { mutableStateOf(false) }
+
     val context = LocalContext.current
+
+    FindDeviceConfiguration(context)
+
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
             if (errorMessage.isNotEmpty()) {
@@ -2928,3 +2941,6 @@ fun PaymentFailureAlert(
         }
     }
 }
+
+
+

@@ -59,7 +59,6 @@ import com.ezycart.domain.model.AppMode
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.meticha.permissions_compose.AppPermission
 import com.meticha.permissions_compose.rememberAppPermissionState
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
@@ -289,25 +288,26 @@ fun SingleSelectCheckboxes(
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-fun FindDeviceConfiguration(context : Context){
+fun FindDeviceConfiguration(context : Context): Boolean {
     val activity = context.findActivity()
+    var isTablet = true
     if (activity !=null){
         val windowSize = calculateWindowSizeClass(activity)
 
         // Check: Is it wide AND tall? (This filters out rotated phones)
-        val isTablet = windowSize.widthSizeClass > WindowWidthSizeClass.Compact &&
+         isTablet = windowSize.widthSizeClass > WindowWidthSizeClass.Compact &&
                 windowSize.heightSizeClass > WindowHeightSizeClass.Compact
 
         if (isTablet) {
-            Toast.makeText(context,"Tablet", Toast.LENGTH_SHORT).show()
             // Lock Tablet to Landscape
             LockScreenOrientation(activity,ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
         } else {
-            Toast.makeText(context,"Mobile", Toast.LENGTH_SHORT).show()
             // Lock Phone to Portrait
             LockScreenOrientation(activity,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
     }
+
+    return isTablet
 }
 
 @Composable

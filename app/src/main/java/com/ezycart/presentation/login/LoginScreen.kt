@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ezycart.R
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.presentation.ScannerViewModel
+import com.ezycart.presentation.activation.FindDeviceConfiguration
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -88,9 +89,13 @@ fun LoginScreen(
 ) {
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     var scanBuffer = remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+
+    val isTablet = FindDeviceConfiguration(context)
+
     LaunchedEffect(cameraPermissionState.status) {
         when {
             !cameraPermissionState.status.isGranted ->{
@@ -104,187 +109,268 @@ fun LoginScreen(
             onLoginSuccess()
         }
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .onKeyEvent { keyEvent ->
-                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
-                    when (val key = keyEvent.key) {
-                        androidx.compose.ui.input.key.Key.Enter -> {
-                            if (scanBuffer.value.isNotBlank()) {
-                                //Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
-                                viewModel.login(viewModel.extractEmployeePin(scanBuffer.value))
-                                scanBuffer.value = "" // reset after processing
+    if (isTablet) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                        when (val key = keyEvent.key) {
+                            androidx.compose.ui.input.key.Key.Enter -> {
+                                if (scanBuffer.value.isNotBlank()) {
+                                    //Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
+                                    viewModel.login(viewModel.extractEmployeePin(scanBuffer.value))
+                                    scanBuffer.value = "" // reset after processing
+                                }
+                                true
                             }
-                            true
-                        }
-                        else -> {
-                            // Append normal characters
-                            val c = keyEvent.utf16CodePoint.toChar()
-                            if (c.isLetterOrDigit()) {
-                                scanBuffer.value += c
+                            else -> {
+                                // Append normal characters
+                                val c = keyEvent.utf16CodePoint.toChar()
+                                if (c.isLetterOrDigit()) {
+                                    scanBuffer.value += c
+                                }
+                                false
                             }
-                            false
                         }
+                    } else {
+                        false
                     }
-                } else {
-                    false
+                }
+        ) {
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left side: 3 logos
+                Row(
+                    modifier = Modifier
+                        //.weight(0.65f),
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Spacer(modifier = Modifier.width(50.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_retailetics), // replace with ad/banner
+                        contentDescription = "appLogo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(width = 210.dp, height = 60.dp).padding(end = 10.dp)
+                    )
+                    /*Spacer(modifier = Modifier.width(30.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_group_arrow), // replace with ad/banner
+                        contentDescription = "arrow",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(width = 140.dp, height = 40.dp).padding(end = 10.dp)
+                    )
+                    Spacer(modifier = Modifier.width(30.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_merchant_logo), // replace with ad/banner
+                        contentDescription = "merchantLogo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(width = 240.dp, height = 60.dp).padding(end = 10.dp)
+                    )*/
+                }
+
+                // Right side: Theme + Language icons
+                Row(
+                    modifier = Modifier.weight(0.35f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    /* AndroidView(
+                         factory = { ctx ->
+                             ImageView(ctx).apply {
+                                 setImageResource(R.drawable.toggle_button_off)
+                             }
+                         },
+                         modifier = Modifier.size(100.dp, 40.dp).padding(end = 10.dp)
+                     )
+                     LanguageDropdown()*/
+
                 }
             }
-    ) {
 
-        Spacer(modifier = Modifier.height(20.dp))
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left side: 3 logos
-            Row(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 🔹 Main Content (Split 50/50)
+            Row (
                 modifier = Modifier
-                    //.weight(0.65f),
-                   .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                    .fillMaxSize()
             ) {
-                Spacer(modifier = Modifier.width(50.dp))
+                // Top half: Image
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.shopping_cart_bg_image_normal), // replace with ad/banner
+                        contentDescription = "Ad Banner",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().padding(70.dp)
+                    )
+                }
+
+                // Bottom half: Center button
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(fontWeight = FontWeight.Bold,
+                            text = "Sign In With Employee PIN",
+                            fontSize = 28.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(40.dp))
+                        Text(
+                            text = "Enter Your Employee Pin Here",
+                            fontSize = 22.sp,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OtpPinView(
+                            otpText = state.employeePin,
+                            onOtpTextChange  = viewModel::onEmployeePinChange,
+                            otpLength = 5
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = {
+                                //viewModel.clearpref()
+                                //scannerViewModel.onScanned("57024")
+                                if (state.employeePin.length == 5) {
+                                    viewModel.login()
+                                } else {
+                                    DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth(0.6f)
+                                .height(50.dp)
+                        ) {
+                            Text(fontWeight = FontWeight.Bold,
+                                text = "Sign In",
+                                fontSize = 22.sp,
+                                color = Color.White
+                            )
+                        }
+                        state.error?.let { error ->
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(40.dp))
+                        Text(fontWeight = FontWeight.Bold,
+                            text = "(OR)",
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(fontWeight = FontWeight.Bold,
+                            text = "Scan your employee Barcode to Sing In",
+                            fontSize = 25.sp,
+                            color = MaterialTheme.colorScheme.primary
+
+                        )
+                    }
+
+                }
+            }
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(modifier = Modifier.height(5.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_retailetics), // replace with ad/banner
                     contentDescription = "appLogo",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(width = 210.dp, height = 60.dp).padding(end = 10.dp)
                 )
-                /*Spacer(modifier = Modifier.width(30.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.ic_group_arrow), // replace with ad/banner
-                    contentDescription = "arrow",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(width = 140.dp, height = 40.dp).padding(end = 10.dp)
+                Spacer(modifier = Modifier.height(30.dp))
+                Text(fontWeight = FontWeight.Bold,
+                    text = "Sign In With Employee PIN",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.width(30.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.ic_merchant_logo), // replace with ad/banner
-                    contentDescription = "merchantLogo",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(width = 240.dp, height = 60.dp).padding(end = 10.dp)
-                )*/
-            }
-
-            // Right side: Theme + Language icons
-            Row(
-                modifier = Modifier.weight(0.35f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-               /* AndroidView(
-                    factory = { ctx ->
-                        ImageView(ctx).apply {
-                            setImageResource(R.drawable.toggle_button_off)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Enter Your Employee Pin Here",
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OtpPinView(
+                    otpText = state.employeePin,
+                    onOtpTextChange  = viewModel::onEmployeePinChange,
+                    otpLength = 5
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = {
+                        //viewModel.clearpref()
+                        //scannerViewModel.onScanned("57024")
+                        if (state.employeePin.length == 5) {
+                            viewModel.login()
+                        } else {
+                            DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show()
                         }
                     },
-                    modifier = Modifier.size(100.dp, 40.dp).padding(end = 10.dp)
-                )
-                LanguageDropdown()*/
-
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 🔹 Main Content (Split 50/50)
-        Row (
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            // Top half: Image
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.shopping_cart_bg_image_normal), // replace with ad/banner
-                    contentDescription = "Ad Banner",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().padding(70.dp)
-                )
-            }
-
-            // Bottom half: Center button
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(50.dp)
+                ) {
                     Text(fontWeight = FontWeight.Bold,
-                        text = "Sign In With Employee PIN",
-                        fontSize = 28.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(40.dp))
-                    Text(
-                        text = "Enter Your Employee Pin Here",
-                        fontSize = 22.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    OtpPinView(
-                        otpText = state.employeePin,
-                        onOtpTextChange  = viewModel::onEmployeePinChange,
-                        otpLength = 5
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Button(
-                        onClick = {
-                            //viewModel.clearpref()
-                            //scannerViewModel.onScanned("57024")
-                            if (state.employeePin.length == 5) {
-                                viewModel.login()
-                            } else {
-                                DynamicToast.makeError(context, "Please enter a valid 5-digit Employee PIN").show()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .height(50.dp)
-                    ) {
-                        Text(fontWeight = FontWeight.Bold,
-                            text = "Sign In",
-                            fontSize = 22.sp,
-                            color = Color.White
-                        )
-                    }
-                    state.error?.let { error ->
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(40.dp))
-                    Text(fontWeight = FontWeight.Bold,
-                        text = "(OR)",
+                        text = "Sign In",
                         fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(fontWeight = FontWeight.Bold,
-                        text = "Scan your employee Barcode to Sing In",
-                        fontSize = 25.sp,
-                        color = MaterialTheme.colorScheme.primary
-
+                        color = Color.White
                     )
                 }
+                state.error?.let { error ->
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(40.dp))
+                Text(fontWeight = FontWeight.Bold,
+                    text = "(OR)",
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(fontWeight = FontWeight.Bold,
+                    text = "Scan your employee Barcode to Sing In",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.primary
 
+                )
             }
+
         }
     }
+
 
 }
 
