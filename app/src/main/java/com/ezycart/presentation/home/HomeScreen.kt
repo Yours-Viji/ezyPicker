@@ -348,6 +348,7 @@ fun HomeScreen(
             drawerState = drawerState,
             drawerContent = {
                 DrawerContent(
+                    isTablet = isTablet,
                     appMode = appMode,
                     onTransActionSelected = {
                         scope.launch {
@@ -379,6 +380,7 @@ fun HomeScreen(
             Scaffold(
                 topBar = {
                     MyTopAppBar(
+                        isTablet = isTablet,
                         employeeName = employeeName.value,
                         cartCount = cartCount.value,
                         onMenuClick = {
@@ -431,13 +433,14 @@ fun HomeScreen(
                     ) {
                         Text("Mock Enter Key")
                     }*/
-                    PickersShoppingScreen(viewModel, onQrPaymentClick = {
+                    PickersShoppingScreen(isTablet,viewModel, onQrPaymentClick = {
                         showWalletScanner.value = true
-                       // viewModel.initWavPayQrPayment()
+                        // viewModel.initWavPayQrPayment()
 
                     },onTapToPayClick = {
                         proceedTapToPay.value=true
                     })
+
                 }
             }
         }
@@ -447,6 +450,7 @@ fun HomeScreen(
 
 @Composable
 fun EmptyCartScreen(
+    isTablet: Boolean,
     isPickerModel: Boolean,
     onScanBarcode: () -> Unit,
     onEnterBarcodeManually: () -> Unit
@@ -463,23 +467,23 @@ fun EmptyCartScreen(
             contentDescription = "appLogo",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(width = 280.dp, height = 280.dp)
+                .size(width = if (isTablet)280.dp else 200.dp, height = if (isTablet)280.dp else 200.dp)
                 .graphicsLayer(
                     scaleX = -1f
                 )
         )
         Text(
             text = "Cart is Empty",
-            fontSize = 33.sp,
+            fontSize = if (isTablet)33.sp else 23.sp,
             color = MaterialTheme.colorScheme.tertiary
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Scan a product barcode to begin shopping",
-            fontSize = 28.sp,
+            fontSize = if (isTablet)28.sp else 14.sp,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(if (isTablet)20.dp else 35.dp))
         ManualBarcodeEntryButton(
             onEnterBarcodeManually, modifier = Modifier
                 .width(230.dp)
@@ -498,7 +502,7 @@ fun EmptyCartScreen(
 }
 
 @Composable
-fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
+fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
     val showScanner = remember { mutableStateOf(false) }
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
@@ -512,7 +516,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
             .padding(10.dp)
     ) {
         // Left 23%
-        if (isPickerModel.value) {
+        if (isTablet && isPickerModel.value) {
             Box(
                 modifier = Modifier
                     .weight(0.23f)
@@ -575,6 +579,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
         ) {
             if (cartDataList.value.isEmpty()) {
                 EmptyCartScreen(
+                    isTablet,
                     isPickerModel.value,
                     //scannerViewModel,
                     onScanBarcode = { showScanner.value = true },
@@ -597,7 +602,7 @@ fun PickersShoppingScreen(viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,
         }
 
         // Right 28%
-        if (cartDataList.value.isNotEmpty()) {
+        if (isTablet && cartDataList.value.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .weight(if (isPickerModel.value) 0.28f else 0.35f)
@@ -1204,6 +1209,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTopAppBar(
+    isTablet: Boolean,
     employeeName:String="",
     cartCount: Int = 0,
     onMenuClick: () -> Unit,
@@ -1211,7 +1217,6 @@ fun MyTopAppBar(
     onLogout: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    val context = LocalContext.current
     TopAppBar(
         title = {
             Text(
@@ -1221,7 +1226,8 @@ fun MyTopAppBar(
                     "WELCOME, $employeeName"
                 },
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Medium ,
+                    fontSize = if(isTablet) 10.sp else 12.sp,
                     color = Color.White
                 )
             )
@@ -1230,7 +1236,7 @@ fun MyTopAppBar(
             IconButton(
                 onClick = onMenuClick,
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(if(isTablet) 40.dp else 30.dp)
                     .clip(CircleShape)
             ) {
                 Icon(
@@ -1243,7 +1249,7 @@ fun MyTopAppBar(
         actions = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(if(isTablet)8.dp else 5.dp)
             ) {
                 IconButton(
                     onClick = {
@@ -1254,12 +1260,12 @@ fun MyTopAppBar(
                         painter = painterResource(id = R.drawable.outline_autorenew_24),
                         contentDescription = "Refresh",
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(if(isTablet) 40.dp else 28.dp)
                     )
                 }
-                Spacer(Modifier.width(30.dp))
-                CartIconWithBadge(count = cartCount)
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.width(if(isTablet)  30.dp else 3.dp))
+                CartIconWithBadge(count = cartCount,isTablet = isTablet)
+                Spacer(Modifier.width(if(isTablet)  20.dp else 3.dp))
                 IconButton(
                     onClick = {
                         onLogout()
@@ -1269,11 +1275,11 @@ fun MyTopAppBar(
                         painter = painterResource(id = R.drawable.outline_logout_24),
                         contentDescription = "Logout",
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(if(isTablet) 40.dp else 23.dp)
                     )
                 }
 
-                Spacer(Modifier.width(50.dp))
+                Spacer(Modifier.width(if(isTablet) 50.dp else 5.dp))
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -1286,12 +1292,13 @@ fun MyTopAppBar(
 @Composable
 fun CartIconWithBadge(
     count: Int,
+    isTablet: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
-            .size(40.dp)
+            .size(if(isTablet)40.dp else 25.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.TopEnd
     ) {
@@ -1314,7 +1321,7 @@ fun CartIconWithBadge(
                     text = if (count > 99) "99+" else count.toString(),
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    fontSize = 10.sp
+                    fontSize = if(isTablet) 10.sp else 7.sp
                 )
             }
         //}
@@ -2391,6 +2398,7 @@ fun ManualBarcodeEntryDialog(
 
 @Composable
 fun DrawerContent(
+    isTablet: Boolean,
     appMode: AppMode,
     onTransActionSelected: () -> Unit,
     onAppModeUpdated: (AppMode) -> Unit,
@@ -2401,7 +2409,7 @@ fun DrawerContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(350.dp)
+            .width(if(isTablet)350.dp else 300.dp)
             .background(MaterialTheme.colorScheme.surface),
         verticalArrangement = Arrangement.Top
     ) {
@@ -2428,9 +2436,9 @@ fun DrawerContent(
                 painter = painterResource(id = R.drawable.transaction),
                 contentDescription = "transaction",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(if(isTablet) 24.dp else 22.dp)
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(if(isTablet) 16.dp else 10.dp))
             Text(
                 text = "View Transaction",
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -2465,7 +2473,7 @@ fun DrawerContent(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )*/
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(if(isTablet) 16.dp else 10.dp))
             Text(
                 text = "Show Price Checker",
                 style = MaterialTheme.typography.bodyLarge.copy(
