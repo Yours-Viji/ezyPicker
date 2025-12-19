@@ -165,7 +165,31 @@ fun LoginScreen(
 
                 // Right side: Theme + Language icons
                 Row(
-                    modifier = Modifier.weight(0.35f),
+                    modifier = Modifier.weight(0.35f)
+                        .onKeyEvent { keyEvent ->
+                            if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                                when (val key = keyEvent.key) {
+                                    androidx.compose.ui.input.key.Key.Enter -> {
+                                        if (scanBuffer.value.isNotBlank()) {
+                                            //Toast.makeText(context, "Pin: $scanBuffer", Toast.LENGTH_SHORT).show()
+                                            viewModel.login(viewModel.extractEmployeePin(scanBuffer.value))
+                                            scanBuffer.value = "" // reset after processing
+                                        }
+                                        true
+                                    }
+                                    else -> {
+                                        // Append normal characters
+                                        val c = keyEvent.utf16CodePoint.toChar()
+                                        if (c.isLetterOrDigit()) {
+                                            scanBuffer.value += c
+                                        }
+                                        false
+                                    }
+                                }
+                            } else {
+                                false
+                            }
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {

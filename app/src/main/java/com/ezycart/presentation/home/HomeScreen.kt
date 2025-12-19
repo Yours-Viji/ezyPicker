@@ -183,7 +183,7 @@ fun HomeScreen(
     val priceInfo by viewModel.priceDetails.collectAsState()
     val productInfo by viewModel.productInfo.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
-val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
+    val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
    // var canShowPriceChecker = remember { mutableStateOf(true) }
@@ -201,7 +201,7 @@ val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
 
     val context = LocalContext.current
 
-    FindDeviceConfiguration(context)
+    val isTablet = FindDeviceConfiguration(context)
 
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
