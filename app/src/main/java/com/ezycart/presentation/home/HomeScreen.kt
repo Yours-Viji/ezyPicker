@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -74,6 +75,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -86,6 +88,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -172,7 +175,7 @@ fun HomeScreen(
 
     onThemeChange: () -> Unit,
     onPaymentInitialize: () -> Unit,
-    makeNearPayment:(String, String,NearPaymentListener?)->Unit,
+    makeNearPayment: (String, String, NearPaymentListener?) -> Unit,
     onLogout: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
@@ -186,7 +189,7 @@ fun HomeScreen(
     val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-   // var canShowPriceChecker = remember { mutableStateOf(true) }
+    // var canShowPriceChecker = remember { mutableStateOf(true) }
     val appMode by viewModel.appMode.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
@@ -225,24 +228,25 @@ fun HomeScreen(
 
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
-            val finalAmount= it?.finalAmount ?: 0.0
-            makeNearPayment("12345","$finalAmount",object : NearPaymentListener {
+            val finalAmount = it?.finalAmount ?: 0.0
+            makeNearPayment("12345", "$finalAmount", object : NearPaymentListener {
                 override fun onPaymentSuccess(transactionData: TransactionData) {
                     viewModel.makePayment(2)
                 }
 
                 override fun onPaymentFailed(error: String) {
                     showErrorMessage.value = error
-                   // Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
                 }
             })
-            proceedTapToPay.value=false
+            proceedTapToPay.value = false
         }
     }
     if (showQrDialog.value) {
         shoppingCartInfo.value.let {
-            val finalAmount= it?.finalAmount ?: 0.0
+            val finalAmount = it?.finalAmount ?: 0.0
             QRPaymentAlert(
+                isTablet = isTablet,
                 qrCodeUrl = wavPayQrPaymentUrl.value,
                 paymentAmount = "${Constants.currencySymbol} $finalAmount",
                 onDismiss = {
@@ -255,6 +259,7 @@ fun HomeScreen(
     }
     if (showPaymentSuccessDialog.value) {
         PaymentSuccessAlert(
+            isTablet,
             onSendReceipt = {
                 // Handle send receipt logic
                 println("Receipt sent!")
@@ -267,7 +272,8 @@ fun HomeScreen(
         )
     }
     if (showPaymentErrorDialog.value) {
-        PaymentFailureAlert (
+        PaymentFailureAlert(
+            isTablet,
             onRetry = {
                 viewModel.hidePaymentSuccessAlertView()
                 viewModel.hidePaymentErrorAlertView()
@@ -282,12 +288,12 @@ fun HomeScreen(
     if (showDialog.value) {
         var lastClickTime = 0L
         val clickDebounceTime = 300L
-        if (canShowPriceChecker.value){
-            ProductPriceAlert(viewModel = viewModel) {
+        if (canShowPriceChecker.value) {
+            ProductPriceAlert(isTablet,viewModel = viewModel) {
                 showDialog.value = false
             }
             focusRequester.requestFocus()
-        }else{
+        } else {
             val currentTime = System.currentTimeMillis()
             if (currentTime - lastClickTime > clickDebounceTime) {
                 lastClickTime = currentTime
@@ -333,6 +339,7 @@ fun HomeScreen(
                             }
                             true
                         }
+
                         else -> {
                             val c = keyEvent.utf16CodePoint.toChar()
                             if (c.isLetterOrDigit()) {
@@ -359,7 +366,8 @@ fun HomeScreen(
                         }
                     },
                     onAppModeUpdated = { appMode ->
-                        scope.launch { drawerState.close()
+                        scope.launch {
+                            drawerState.close()
                             delay(100)
                             focusRequester.requestFocus()
                         }
@@ -368,7 +376,8 @@ fun HomeScreen(
                     },
                     isChecked = canShowPriceChecker.value,
                     onCheckedChange = {
-                        scope.launch { drawerState.close()
+                        scope.launch {
+                            drawerState.close()
                             delay(100)
                             focusRequester.requestFocus()
                         }
@@ -403,42 +412,42 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     val localView = LocalView.current
-                   /* Button(
-                        onClick = {
-                            // Mock scanner input
-                            scanBuffer.value = "6936489101973"
+                    /* Button(
+                         onClick = {
+                             // Mock scanner input
+                             scanBuffer.value = "6936489101973"
 
-                            // Request focus and dispatch with delay
-                            focusRequester.requestFocus()
+                             // Request focus and dispatch with delay
+                             focusRequester.requestFocus()
 
-                            // Use coroutine to ensure proper timing
-                            CoroutineScope(Dispatchers.Main).launch {
-                                delay(50) // Small delay to ensure focus is acquired
+                             // Use coroutine to ensure proper timing
+                             CoroutineScope(Dispatchers.Main).launch {
+                                 delay(50) // Small delay to ensure focus is acquired
 
-                                val mockKeyEvent = android.view.KeyEvent(
-                                    android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
-                                    android.view.KeyEvent.KEYCODE_ENTER
-                                )
-                                localView.dispatchKeyEvent(mockKeyEvent)
+                                 val mockKeyEvent = android.view.KeyEvent(
+                                     android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
+                                     android.view.KeyEvent.KEYCODE_ENTER
+                                 )
+                                 localView.dispatchKeyEvent(mockKeyEvent)
 
-                                // Also send ACTION_UP
-                                val upEvent = android.view.KeyEvent(
-                                    android.view.KeyEvent.ACTION_UP,
-                                    android.view.KeyEvent.KEYCODE_ENTER
-                                )
-                                localView.dispatchKeyEvent(upEvent)
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.Center)
-                    ) {
-                        Text("Mock Enter Key")
-                    }*/
-                    PickersShoppingScreen(isTablet,viewModel, onQrPaymentClick = {
+                                 // Also send ACTION_UP
+                                 val upEvent = android.view.KeyEvent(
+                                     android.view.KeyEvent.ACTION_UP,
+                                     android.view.KeyEvent.KEYCODE_ENTER
+                                 )
+                                 localView.dispatchKeyEvent(upEvent)
+                             }
+                         },
+                         modifier = Modifier.align(Alignment.Center)
+                     ) {
+                         Text("Mock Enter Key")
+                     }*/
+                    PickersShoppingScreen(isTablet, viewModel, onQrPaymentClick = {
                         showWalletScanner.value = true
                         // viewModel.initWavPayQrPayment()
 
-                    },onTapToPayClick = {
-                        proceedTapToPay.value=true
+                    }, onTapToPayClick = {
+                        proceedTapToPay.value = true
                     })
 
                 }
@@ -467,30 +476,33 @@ fun EmptyCartScreen(
             contentDescription = "appLogo",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(width = if (isTablet)280.dp else 200.dp, height = if (isTablet)280.dp else 200.dp)
+                .size(
+                    width = if (isTablet) 280.dp else 200.dp,
+                    height = if (isTablet) 280.dp else 200.dp
+                )
                 .graphicsLayer(
                     scaleX = -1f
                 )
         )
         Text(
             text = "Cart is Empty",
-            fontSize = if (isTablet)33.sp else 23.sp,
+            fontSize = if (isTablet) 33.sp else 23.sp,
             color = MaterialTheme.colorScheme.tertiary
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Scan a product barcode to begin shopping",
-            fontSize = if (isTablet)28.sp else 14.sp,
+            fontSize = if (isTablet) 28.sp else 14.sp,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(if (isTablet)20.dp else 35.dp))
+        Spacer(modifier = Modifier.height(if (isTablet) 20.dp else 35.dp))
         ManualBarcodeEntryButton(
             onEnterBarcodeManually, modifier = Modifier
                 .width(230.dp)
                 .height(48.dp), 20f
         )
         Spacer(modifier = Modifier.height(20.dp))
-        if (!isPickerModel){
+        if (!isPickerModel) {
             ScannerButton(
                 onScanBarcode, Modifier
                     .width(230.dp)
@@ -501,14 +513,48 @@ fun EmptyCartScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
+fun PickersShoppingScreen(
+    isTablet: Boolean,
+    viewModel: HomeViewModel,
+    onQrPaymentClick: () -> Unit,
+    onTapToPayClick: () -> Unit
+) {
     val showScanner = remember { mutableStateOf(false) }
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
     val cartDataList = viewModel.cartDataList.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    var showSheet = remember { mutableStateOf(false) }
+
+    if (showSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet.value = false },
+            sheetState = sheetState,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            containerColor = Color.White,
+            dragHandle = null
+        ) {
+            // Wrap the content in a Box to control the height
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.7f) // This sets the height to 70% of the screen
+            ) {
+                CheckoutSummaryScreen(
+                    shoppingCartInfo = shoppingCartInfo,
+                    onQrPaymentClick = { onQrPaymentClick() },
+                    onTapToPayClick = { onTapToPayClick() }
+                )
+            }
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -563,7 +609,7 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
                             "DAISY MARJERIN 480GM"
                         )
 
-                        ProductPickList(items = groceries,cartItems = cartDataList.value)
+                        ProductPickList(items = groceries, cartItems = cartDataList.value)
                     }
                 }
             }
@@ -573,7 +619,13 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
         // Center 49%
         Box(
             modifier = Modifier
-                .weight(if (isPickerModel.value) 0.49f else 0.65f)
+                .then(
+                    if (isTablet) {
+                        Modifier.weight(if (isPickerModel.value) 0.49f else 0.65f)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+                )
                 .fillMaxHeight(),
             contentAlignment = Alignment.Center
         ) {
@@ -583,20 +635,27 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
                     isPickerModel.value,
                     //scannerViewModel,
                     onScanBarcode = { showScanner.value = true },
-                    onEnterBarcodeManually = {showManualBarCode.value = true})
+                    onEnterBarcodeManually = { showManualBarCode.value = true })
             } else {
                 CartScreen(
+                    isTablet,
+                    shoppingCartInfo,
                     isPickerModel.value,
                     cartItems = cartDataList.value,
                     onScanBarcode = { showScanner.value = true },
-                    onEnterBarcodeManually = {showManualBarCode.value = true},
+                    onEnterBarcodeManually = { showManualBarCode.value = true },
                     onClearCart = { viewModel.initNewShopping() },
-                    onRemoveItem = {cartItem ->
-                        viewModel.deleteProductFromShoppingCart(cartItem.barcode,cartItem.id)
+                    onRemoveItem = { cartItem ->
+                        viewModel.deleteProductFromShoppingCart(cartItem.barcode, cartItem.id)
                     },
-                    onEditProduct = {barCode, id, quantity ->
-                        viewModel.editProductInShoppingCart(barCode = barCode, quantity = quantity, id = id)
-                    }
+                    onEditProduct = { barCode, id, quantity ->
+                        viewModel.editProductInShoppingCart(
+                            barCode = barCode,
+                            quantity = quantity,
+                            id = id
+                        )
+                    },
+                    onPayNowClick = { showSheet.value = true},
                 )
             }
         }
@@ -618,7 +677,10 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    CheckoutSummaryScreen(shoppingCartInfo,onQrPaymentClick={onQrPaymentClick()},onTapToPayClick={onTapToPayClick()})
+                    CheckoutSummaryScreen(
+                        shoppingCartInfo,
+                        onQrPaymentClick = { onQrPaymentClick() },
+                        onTapToPayClick = { onTapToPayClick() })
                 }
             }
         }
@@ -631,7 +693,7 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
                 scannedCode.value = it
                 viewModel.resetProductInfoDetails()
                 viewModel.getProductDetails(scannedCode.value.toString())
-               // scannerViewModel.onScanned(scannedCode.value.toString())
+                // scannerViewModel.onScanned(scannedCode.value.toString())
                 showScanner.value = false
             }
         )
@@ -641,22 +703,26 @@ fun PickersShoppingScreen(isTablet:Boolean,viewModel: HomeViewModel,onQrPaymentC
             onProceed = { barcode ->
                 viewModel.resetProductInfoDetails()
                 viewModel.getProductDetails(barcode)
-               // scannerViewModel.onScanned(barcode)
-                showManualBarCode.value=false
+                // scannerViewModel.onScanned(barcode)
+                showManualBarCode.value = false
             },
             onCancel = {
-                showManualBarCode.value=false
+                showManualBarCode.value = false
                 println("Cancel clicked")
             },
             onDismiss = {
-                showManualBarCode.value=false
+                showManualBarCode.value = false
             }
         )
     }
 }
 
 @Composable
-fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaymentClick: () -> Unit,onTapToPayClick:()->Unit) {
+fun CheckoutSummaryScreen(
+    shoppingCartInfo: State<ShoppingCartDetails?>,
+    onQrPaymentClick: () -> Unit,
+    onTapToPayClick: () -> Unit
+) {
 
     Column(
         modifier = Modifier
@@ -665,7 +731,11 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
     ) {
         val paymentSummary = shoppingCartInfo.value
         Column {
-            BillRow("Sub Total", "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}", color = Color.Black)
+            BillRow(
+                "Sub Total",
+                "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}",
+                color = Color.Black
+            )
             BillRow(
                 "Promo Discount",
                 "${Constants.currencySymbol} ${paymentSummary?.promotionSave ?: 0.0}",
@@ -686,7 +756,11 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
                 "${Constants.currencySymbol} ${paymentSummary?.vourcherAmount ?: 0.0}",
                 color = Color.Black
             )
-            BillRow("Tax", "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}", color = Color.Black)
+            BillRow(
+                "Tax",
+                "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}",
+                color = Color.Black
+            )
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Spacer(modifier = Modifier.height(5.dp))
             BillRow(
@@ -700,36 +774,36 @@ fun CheckoutSummaryScreen(shoppingCartInfo: State<ShoppingCartDetails?>,onQrPaym
         Spacer(modifier = Modifier.height(10.dp))
 
         // Apply Coupon / Voucher Button
-       /* Button(
-            onClick = {
+        /* Button(
+             onClick = {
 
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(45.dp),
-            shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.colorGreen),      // background color
-                contentColor = Color.White,              // default for text & icons
-                disabledContainerColor = Color.Gray,     // background when disabled
-                disabledContentColor = Color.LightGray   // text/icon when disabled
-            )
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_coupon_white),
-                contentDescription = null,
-                modifier = Modifier.size(25.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Apply Coupon / Voucher",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = Color.White
-                )
-            )
-        }*/
+             },
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .height(45.dp),
+             shape = RoundedCornerShape(50.dp),
+             colors = ButtonDefaults.buttonColors(
+                 containerColor = colorResource(R.color.colorGreen),      // background color
+                 contentColor = Color.White,              // default for text & icons
+                 disabledContainerColor = Color.Gray,     // background when disabled
+                 disabledContentColor = Color.LightGray   // text/icon when disabled
+             )
+         ) {
+             Icon(
+                 painter = painterResource(id = R.drawable.ic_coupon_white),
+                 contentDescription = null,
+                 modifier = Modifier.size(25.dp)
+             )
+             Spacer(modifier = Modifier.width(8.dp))
+             Text(
+                 text = "Apply Coupon / Voucher",
+                 style = MaterialTheme.typography.headlineSmall.copy(
+                     fontWeight = FontWeight.Bold,
+                     fontSize = 17.sp,
+                     color = Color.White
+                 )
+             )
+         }*/
 
         // Take up remaining space → pushes "Total Payable" to bottom
         Spacer(modifier = Modifier.weight(1f))
@@ -898,6 +972,8 @@ fun ScannerButton(onScanBarcode: () -> Unit, modifier: Modifier = Modifier, font
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
+    isTablet: Boolean,
+    shoppingCartInfo: State<ShoppingCartDetails?>,
     isPickerModel: Boolean,
     cartItems: List<CartItem>,
     onScanBarcode: () -> Unit,
@@ -905,57 +981,150 @@ fun CartScreen(
     onClearCart: () -> Unit,
     onRemoveItem: (CartItem) -> Unit,
     modifier: Modifier = Modifier,
-    onEditProduct:(String,Int,Int) -> Unit
+    onEditProduct: (String, Int, Int) -> Unit,
+    onPayNowClick: () -> Unit,
 ) {
+    val paymentSummary = shoppingCartInfo.value
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
+            if (isTablet) {
+                Row(
 
-            Row(
-
-                modifier = Modifier
-                    .background(color = Color.Transparent)
-                    .fillMaxWidth()
-                    .padding(12.dp),
-
-
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = onClearCart,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(colorResource(R.color.colorRed))
+                        .background(color = Color.Transparent)
+                        .fillMaxWidth()
+                        .padding(12.dp),
+
+
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        painter = painterResource(id = R.drawable.ic_delete),
-                        contentDescription = null,
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Clear Cart", style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            fontSize = 15.sp
+                    Button(
+                        onClick = onClearCart,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(colorResource(R.color.colorRed))
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            painter = painterResource(id = R.drawable.ic_delete),
+                            contentDescription = null,
+                            tint = Color.White
                         )
-                    )
-                }
-                ManualBarcodeEntryButton(
-                    onEnterBarcodeManually, modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp), 15f
-                )
-                if (!isPickerModel){
-                    ScannerButton(
-                        onScanBarcode, Modifier
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Clear Cart", style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                fontSize = 15.sp
+                            )
+                        )
+                    }
+                    ManualBarcodeEntryButton(
+                        onEnterBarcodeManually, modifier = Modifier
                             .weight(1f)
                             .height(48.dp), 15f
                     )
+                    if (!isPickerModel) {
+                        ScannerButton(
+                            onScanBarcode, Modifier
+                                .weight(1f)
+                                .height(48.dp), 15f
+                        )
+                    }
                 }
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.White,
+                    shadowElevation = 8.dp, // Adds the slight shadow seen in your image
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                        //.navigationBarsPadding() // Ensures it doesn't overlap system buttons
+                    ) {
+                        // Grand Total Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Grand Total:",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = Color(0xFF4B308A) // Your purple color
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Pay Now Button
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Group of 3 Action Buttons (Allocated 55% total)
+                            // Button 1: Clear Cart
+                            ActionButton(
+                                modifier = Modifier.weight(0.183f),
+                                label = "Clear",
+                                icon = R.drawable.ic_delete,
+                                color = Color.Red,
+                                onClick = onClearCart
+                            )
+
+                            // Button 2: Enter Barcode
+                            ActionButton(
+                                modifier = Modifier.weight(0.183f),
+                                label = "Barcode",
+                                icon = R.drawable.ic_edit, // Replace with your icon
+                                color = Color(0xFF8BC34A),
+                                onClick = onEnterBarcodeManually
+                            )
+
+                            // Button 3: Scan
+                            ActionButton(
+                                modifier = Modifier.weight(0.183f),
+                                label = "Scan",
+                                icon = R.drawable.ic_scan, // Replace with your icon
+                                color = colorResource(R.color.colorAccent),
+                                onClick = onScanBarcode
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            // Pay Now Button (Allocated 45% exactly)
+                            Button(
+                                onClick = onPayNowClick,
+                                modifier = Modifier
+                                    .weight(0.45f) // Takes 45% of Row width
+                                    .height(55.dp), // Matched height with action buttons
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF673AB7))
+                            ) {
+                                Text(
+                                    text = "PAY NOW",
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontSize = if(isTablet) 18.sp else 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
             }
         }
     ) { innerPadding ->
@@ -976,33 +1145,74 @@ fun CartScreen(
                     .padding(innerPadding),
                 contentPadding = PaddingValues(bottom = 92.dp) // leave room for bottom bar
             ) {
-                itemsIndexed(cartItems) { index, productData ->
-                    CartItemCard(
-                        productInfo = productData,
-                        onRemove = { onRemoveItem(it) },
-                        onEditProduct = { barCode, id, updatedQuantity->
-                            onEditProduct(barCode, id, updatedQuantity)
-                        },
-                    )
-                }
+                //repeat(20) {
+                    itemsIndexed(cartItems) { index, productData ->
+                        CartItemCard(
+                            isTablet = isTablet,
+                            productInfo = cartItems[0],
+                            onRemove = { onRemoveItem(it) },
+                            onEditProduct = { barCode, id, updatedQuantity ->
+                                onEditProduct(barCode, id, updatedQuantity)
+                            },
+                        )
+                    }
+                //}
             }
         }
     }
 }
-
+@Composable
+fun ActionButton(
+    modifier: Modifier,
+    label: String,
+    icon: Int,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(55.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = color),
+        contentPadding = PaddingValues(0.dp) // Ensures content fits in small weights
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = Color.White
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = Color.White,
+                    fontSize = 9.sp
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 @Composable
 fun CartItemCard(
+    isTablet: Boolean,
     productInfo: CartItem,
     onRemove: (CartItem) -> Unit,
     modifier: Modifier = Modifier,
-    onEditProduct: (String,Int,Int) -> Unit,
+    onEditProduct: (String, Int, Int) -> Unit,
 ) {
     var showDeleteDialog = remember { mutableStateOf(false) }
     var showEditDialog = remember { mutableStateOf(false) }
     var selectedCartItem = remember { mutableStateOf<CartItem?>(null) }
 
-    if (showDeleteDialog.value && selectedCartItem.value!=null) {
+    if (showDeleteDialog.value && selectedCartItem.value != null) {
         DeleteProductDialog(
+            isTablet,
             productName = selectedCartItem.value?.productName ?: "",
             productCode = selectedCartItem.value?.barcode ?: "",
             oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
@@ -1016,17 +1226,24 @@ fun CartItemCard(
             onDismiss = { showDeleteDialog.value = false }
         )
     }
-    if (showEditDialog.value && selectedCartItem.value!=null) {
-        EditProductDialog (
+    if (showEditDialog.value && selectedCartItem.value != null) {
+        EditProductDialog(
+            isTablet,
             productName = selectedCartItem.value?.productName ?: "",
             productCode = selectedCartItem.value?.barcode ?: "",
             oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
             newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
             imageRes = selectedCartItem.value?.imageUrl ?: "",
             currentQuantity = selectedCartItem.value?.quantity ?: 1,
-            onEdit = {updatedQuantity->
-                if (selectedCartItem.value?.quantity != updatedQuantity){
-                    selectedCartItem.value?.let { onEditProduct(it.barcode,it.id,updatedQuantity) }
+            onEdit = { updatedQuantity ->
+                if (selectedCartItem.value?.quantity != updatedQuantity) {
+                    selectedCartItem.value?.let {
+                        onEditProduct(
+                            it.barcode,
+                            it.id,
+                            updatedQuantity
+                        )
+                    }
                 }
                 showEditDialog.value = false
             },
@@ -1035,8 +1252,20 @@ fun CartItemCard(
     }
     Card(
         modifier = modifier
+            .then(
+                if (isTablet) {
+
+                    Modifier
+                } else {
+
+                    Modifier.height(100.dp)
+                }
+            )
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(
+                horizontal = if (isTablet) 12.dp else 3.dp,
+                vertical = if (isTablet) 6.dp else 2.dp
+            ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -1045,13 +1274,13 @@ fun CartItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(if (isTablet) 12.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Image
             Box(
                 modifier = Modifier
-                    .size(75.dp)
+                    .size(if (isTablet) 75.dp else 35.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFFF2F2F2)),
                 contentAlignment = Alignment.Center
@@ -1075,7 +1304,7 @@ fun CartItemCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(if (isTablet) 12.dp else 4.dp))
 
             // Product name
             Column(
@@ -1083,86 +1312,148 @@ fun CartItemCard(
             ) {
                 Text(
                     text = productInfo.productName,
+                    modifier = Modifier.padding(start = 3.dp),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp
+                        fontSize = if (isTablet) 20.sp else 12.sp
                     ),
-                    maxLines = 2,
+                    maxLines = if (isTablet) 2 else 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(if (isTablet) 6.dp else 3.dp))
+                if (!isTablet) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        // This adds exactly 12.dp of space between every child in the Row
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Spacer(modifier = Modifier.width(3.dp))
+                        // Item 1
+                        Text(
+                            text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
+                                "%.2f".format(
+                                    productInfo.unitPrice
+                                )
+                            }",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 10.sp
+                            ),
+                            color = Color.Gray
+                        )
 
+                        // Item 2 (Conditional)
+                        if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+                            Text(
+                                text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                ),
+                                textDecoration = TextDecoration.LineThrough
+                            )
+                        }
+
+                        // Item 3
+                        Text(
+                            text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                color = colorResource(R.color.colorPrimary)
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_discount_icon),
                         contentDescription = "discount",
                         tint = colorResource(R.color.colorOrange),
                         modifier = Modifier
-                            .size(45.dp)
-                            .padding(start = 4.dp, end = 10.dp)
+                            .size(if (isTablet) 45.dp else 30.dp)
+                            .padding(start = 4.dp, end = if (isTablet) 10.dp else 6.dp)
                     )
 
                     Text(
                         text = "Buy One Get One",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
+                            fontSize = if (isTablet) 17.sp else 10.sp,
                             color = colorResource(R.color.colorOrange)
                         )
                     )
                 }
+
+
             }
 
             // Price (column to align nicely)
-            Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
+            if (isTablet) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
 
-                Text(
-                    text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${"%.2f".format(productInfo.unitPrice)}",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.Gray
-                )
-                if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
                     Text(
-                        text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        textDecoration = TextDecoration.LineThrough,
-
-                        )
-                }
-
-                Text(
-                    text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.colorPrimary)
+                        text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
+                            "%.2f".format(
+                                productInfo.unitPrice
+                            )
+                        }",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 17.sp
+                        ),
+                        color = Color.Gray
                     )
-                )
+                    if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+                        Text(
+                            text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                            ),
+                            textDecoration = TextDecoration.LineThrough,
+
+                            )
+                    }
+
+                    Text(
+                        text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = colorResource(R.color.colorPrimary)
+                        )
+                    )
+                }
             }
-            Spacer(Modifier.width(5.dp))
+            Spacer(Modifier.width(if (isTablet) 5.dp else 3.dp))
             // Delete icon
             Icon(
                 painter = painterResource(id = R.drawable.ic_box_delete),
                 contentDescription = "Delete ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(45.dp)
+                    .size(if (isTablet) 45.dp else 35.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
                         showDeleteDialog.value = true
                     }
             )
-            Spacer(Modifier.width(5.dp))
+            Spacer(Modifier.width(if (isTablet) 5.dp else 3.dp))
             // Edit icon
             Icon(
                 painter = painterResource(id = R.drawable.ic_edit_box),
                 contentDescription = "Edit ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(45.dp)
+                    .size(if (isTablet) 45.dp else 35.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
@@ -1210,7 +1501,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
 @Composable
 fun MyTopAppBar(
     isTablet: Boolean,
-    employeeName:String="",
+    employeeName: String = "",
     cartCount: Int = 0,
     onMenuClick: () -> Unit,
     onFirstIconClick: () -> Unit,
@@ -1226,8 +1517,8 @@ fun MyTopAppBar(
                     "WELCOME, $employeeName"
                 },
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Medium ,
-                    fontSize = if(isTablet) 16.sp else 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = if (isTablet) 16.sp else 12.sp,
                     color = Color.White
                 )
             )
@@ -1236,7 +1527,7 @@ fun MyTopAppBar(
             IconButton(
                 onClick = onMenuClick,
                 modifier = Modifier
-                    .size(if(isTablet) 40.dp else 30.dp)
+                    .size(if (isTablet) 40.dp else 30.dp)
                     .clip(CircleShape)
             ) {
                 Icon(
@@ -1249,7 +1540,7 @@ fun MyTopAppBar(
         actions = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(if(isTablet)8.dp else 5.dp)
+                horizontalArrangement = Arrangement.spacedBy(if (isTablet) 8.dp else 5.dp)
             ) {
                 IconButton(
                     onClick = {
@@ -1260,12 +1551,12 @@ fun MyTopAppBar(
                         painter = painterResource(id = R.drawable.outline_autorenew_24),
                         contentDescription = "Refresh",
                         tint = Color.White,
-                        modifier = Modifier.size(if(isTablet) 40.dp else 28.dp)
+                        modifier = Modifier.size(if (isTablet) 40.dp else 28.dp)
                     )
                 }
-                Spacer(Modifier.width(if(isTablet)  30.dp else 3.dp))
-                CartIconWithBadge(count = cartCount,isTablet = isTablet)
-                Spacer(Modifier.width(if(isTablet)  20.dp else 3.dp))
+                Spacer(Modifier.width(if (isTablet) 30.dp else 3.dp))
+                CartIconWithBadge(count = cartCount, isTablet = isTablet)
+                Spacer(Modifier.width(if (isTablet) 20.dp else 3.dp))
                 IconButton(
                     onClick = {
                         onLogout()
@@ -1275,11 +1566,11 @@ fun MyTopAppBar(
                         painter = painterResource(id = R.drawable.outline_logout_24),
                         contentDescription = "Logout",
                         tint = Color.White,
-                        modifier = Modifier.size(if(isTablet) 40.dp else 23.dp)
+                        modifier = Modifier.size(if (isTablet) 40.dp else 23.dp)
                     )
                 }
 
-                Spacer(Modifier.width(if(isTablet) 50.dp else 5.dp))
+                Spacer(Modifier.width(if (isTablet) 50.dp else 5.dp))
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -1298,7 +1589,7 @@ fun CartIconWithBadge(
 ) {
     Box(
         modifier = modifier
-            .size(if(isTablet)40.dp else 25.dp)
+            .size(if (isTablet) 40.dp else 25.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.TopEnd
     ) {
@@ -1310,20 +1601,20 @@ fun CartIconWithBadge(
         )
 
         //if (count > 0) {
-            Box(
-                modifier = Modifier
-                    .offset(x = (4).dp, y = (-4).dp)
-                    .size(if (count > 99) 26.dp else 20.dp)
-                    .background(Color.Red, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (count > 99) "99+" else count.toString(),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    fontSize = if(isTablet) 10.sp else 7.sp
-                )
-            }
+        Box(
+            modifier = Modifier
+                .offset(x = (4).dp, y = (-4).dp)
+                .size(if (count > 99) 26.dp else 20.dp)
+                .background(Color.Red, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (count > 99) "99+" else count.toString(),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                fontSize = if (isTablet) 10.sp else 7.sp
+            )
+        }
         //}
     }
 }
@@ -1633,15 +1924,19 @@ fun BarcodeScannerDialog(
                                                     scanner.process(image)
                                                         .addOnSuccessListener { barcodes ->
                                                             barcodes.firstOrNull()?.rawValue?.let { code ->
-                                                                val currentTime = System.currentTimeMillis()
+                                                                val currentTime =
+                                                                    System.currentTimeMillis()
 
                                                                 // Allow same product scanning after debounce time
                                                                 if (code != lastProcessedBarcode.value ||
-                                                                    currentTime - lastProcessedTime.value > debounceTime) {
+                                                                    currentTime - lastProcessedTime.value > debounceTime
+                                                                ) {
 
                                                                     isProcessing.value = true
-                                                                    lastProcessedBarcode.value = code
-                                                                    lastProcessedTime.value = currentTime
+                                                                    lastProcessedBarcode.value =
+                                                                        code
+                                                                    lastProcessedTime.value =
+                                                                        currentTime
 
                                                                     scope.launch {
                                                                         // Call the callback
@@ -1686,7 +1981,10 @@ fun BarcodeScannerDialog(
                             .align(Alignment.TopCenter)
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.Black.copy(alpha = 0.52f), Color.Transparent)
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.52f),
+                                        Color.Transparent
+                                    )
                                 )
                             )
                     )
@@ -1698,7 +1996,10 @@ fun BarcodeScannerDialog(
                             .align(Alignment.BottomCenter)
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.52f))
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.52f)
+                                    )
                                 )
                             )
                     )
@@ -1740,6 +2041,7 @@ fun BarcodeScannerDialog(
 
 @Composable
 fun ProductPriceAlert(
+    isTablet: Boolean,
     viewModel: HomeViewModel = hiltViewModel(),
     onDismiss: () -> Unit
 ) {
@@ -1769,14 +2071,14 @@ fun ProductPriceAlert(
                             model = productInfo!!.imageUrl,
                             contentDescription = productInfo!!.productName,
                             modifier = Modifier
-                                .size(220.dp)
+                                .size(if (isTablet)220.dp else 90.dp)
                                 .clip(RoundedCornerShape(12.dp)),
                             placeholder = painterResource(R.drawable.ic_no_product_image),
                             error = painterResource(R.drawable.ic_no_product_image),
                             contentScale = ContentScale.Crop
                         )
 
-                        Spacer(Modifier.width(16.dp))
+                        Spacer(Modifier.width(if (isTablet) 16.dp else 8.dp))
 
                         // Product Details (right side)
                         Column(
@@ -1787,14 +2089,14 @@ fun ProductPriceAlert(
                                 text = productInfo!!.productName,
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
+                                    fontSize = if (isTablet)20.sp else 12.sp,
                                     color = MaterialTheme.colorScheme.primary
                                 ),
                                 textAlign = TextAlign.Start,
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(if (isTablet)8.dp else 4.dp))
 
                             Text(
                                 text = "SKU: ${productInfo!!.barcode}",
@@ -1803,15 +2105,17 @@ fun ProductPriceAlert(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(if (isTablet)16.dp else 8.dp))
 
                             if (priceInfo!!.price != priceInfo!!.originalPrice) {
                                 Text(
-                                    text = "${Constants.currencySymbol} %.2f".format(priceInfo!!.originalPrice ?: 0.0),
+                                    text = "${Constants.currencySymbol} %.2f".format(
+                                        priceInfo!!.originalPrice ?: 0.0
+                                    ),
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         color = Color.Gray,
                                         fontWeight = FontWeight.Medium,
-                                        fontSize = 20.sp,
+                                        fontSize = if (isTablet)20.sp else 10.sp,
                                         textDecoration = TextDecoration.LineThrough,
                                     ),
                                     textAlign = TextAlign.Start,
@@ -1820,11 +2124,13 @@ fun ProductPriceAlert(
                             }
 
                             Text(
-                                text = "${Constants.currencySymbol} %.2f".format(priceInfo!!.price ?: 0.0),
+                                text = "${Constants.currencySymbol} %.2f".format(
+                                    priceInfo!!.price ?: 0.0
+                                ),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
+                                    fontSize = if (isTablet)20.sp else 10.sp,
                                 ),
                                 textAlign = TextAlign.Start,
                                 modifier = Modifier.fillMaxWidth()
@@ -1832,7 +2138,7 @@ fun ProductPriceAlert(
                         }
                     }
 
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(if (isTablet)24.dp else 10.dp))
 
                     // Buttons Row at the bottom - same style, different colors
                     Row(
@@ -1855,7 +2161,7 @@ fun ProductPriceAlert(
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
+                                    fontSize = if (isTablet)20.sp else 10.sp,
                                 ),
                             )
                         }
@@ -1886,7 +2192,7 @@ fun ProductPriceAlert(
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
+                                    fontSize = if (isTablet)20.sp else 10.sp,
                                 )
                             )
                         }
@@ -1895,7 +2201,7 @@ fun ProductPriceAlert(
             },
             shape = RoundedCornerShape(24.dp),
             modifier = Modifier
-                .padding(16.dp)
+                .padding(if (isTablet) 16.dp else 8.dp)
                 .fillMaxWidth(),
             containerColor = Color.White
         )
@@ -1904,11 +2210,12 @@ fun ProductPriceAlert(
 
 @Composable
 fun DeleteProductDialog(
+    isTablet: Boolean,
     productName: String,
     productCode: String,
     oldPrice: String,
     newPrice: String,
-     imageRes: String,
+    imageRes: String,
     onRemove: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1925,7 +2232,7 @@ fun DeleteProductDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(colorResource(R.color.colorPrimary))
-                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                        .padding(horizontal = if(isTablet)16.dp else 8.dp, vertical = if(isTablet)18.dp else 9.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1936,29 +2243,29 @@ fun DeleteProductDialog(
                             painter = painterResource(R.drawable.ic_cart),
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if(isTablet) 22.dp else 15.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(if(isTablet) 10.dp else 5.dp))
                         Text(
                             text = "Are you sure want to delete this product?",
                             color = Color.White,
-                            fontSize = 20.sp,
+                            fontSize = if(isTablet) 20.sp else 10.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if(isTablet) 16.dp else 8.dp))
 
                 // Product area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp),
+                        .padding(horizontal = if(isTablet) 18.dp else 9.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Image + Sale badge
-                    Box(modifier = Modifier.size(130.dp)) {
+                    Box(modifier = Modifier.size(if(isTablet) 130.dp else 85.dp)) {
                         if (imageRes.isNotEmpty()) {
                             AsyncImage(
                                 model = imageRes,
@@ -1979,13 +2286,16 @@ fun DeleteProductDialog(
 
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(if(isTablet) 14.dp else 7.dp))
 
                     // Product info
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = productName,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color  = colorResource(R.color.colorPrimary))
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = colorResource(R.color.colorPrimary)
+                            )
                         )
 
                         Spacer(modifier = Modifier.height(6.dp))
@@ -1995,7 +2305,7 @@ fun DeleteProductDialog(
                             style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(if(isTablet) 10.dp else 5.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -2005,7 +2315,7 @@ fun DeleteProductDialog(
                                     textDecoration = TextDecoration.LineThrough
                                 )
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(if(isTablet) 10.dp else 5.dp))
                             Text(
                                 text = newPrice,
                                 style = MaterialTheme.typography.titleMedium.copy(
@@ -2017,13 +2327,13 @@ fun DeleteProductDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(22.dp))
+                Spacer(modifier = Modifier.height(if(isTablet) 22.dp else 12.dp))
 
                 // Action buttons (Cancel + Remove)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 36.dp, vertical = 8.dp),
+                        .padding(horizontal = if(isTablet) 36.dp else 25.dp, vertical = if(isTablet) 8.dp else 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp) // spacing between buttons
                 ) {
                     // Cancel button
@@ -2042,7 +2352,8 @@ fun DeleteProductDialog(
                         Text(
                             text = "CANCEL",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold, color = colorResource(R.color.colorPrimary)
+                                fontWeight = FontWeight.Bold,
+                                color = colorResource(R.color.colorPrimary)
                             )
                         )
                     }
@@ -2074,6 +2385,7 @@ fun DeleteProductDialog(
 
 @Composable
 fun EditProductDialog(
+    isTablet: Boolean,
     productName: String,
     productCode: String,
     oldPrice: String,
@@ -2097,7 +2409,7 @@ fun EditProductDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(colorResource(R.color.colorPrimary))
-                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                        .padding(horizontal = if(isTablet)16.dp else 8.dp, vertical = if(isTablet)18.dp else 9.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2108,29 +2420,29 @@ fun EditProductDialog(
                             painter = painterResource(R.drawable.ic_cart),
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if(isTablet)22.dp else 10.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(if(isTablet)10.dp else 5.dp))
                         Text(
                             text = "Edit Product",
                             color = Color.White,
-                            fontSize = 20.sp,
+                            fontSize = if(isTablet)20.sp else 10.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if(isTablet)16.dp else 8.dp))
 
                 // Product area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp),
+                        .padding(horizontal = if(isTablet)18.dp else 9.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Image
-                    Box(modifier = Modifier.size(130.dp)) {
+                    Box(modifier = Modifier.size(if(isTablet) 130.dp else 85.dp)) {
                         if (imageRes.isNotEmpty()) {
                             AsyncImage(
                                 model = imageRes,
@@ -2150,7 +2462,7 @@ fun EditProductDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(if(isTablet) 14.dp else 7.dp))
 
                     // Product info
                     Column(modifier = Modifier.weight(1f)) {
@@ -2169,7 +2481,7 @@ fun EditProductDialog(
                             style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(if(isTablet) 10.dp else 5.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -2179,7 +2491,7 @@ fun EditProductDialog(
                                     textDecoration = TextDecoration.LineThrough
                                 )
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(if(isTablet) 10.dp else 5.dp))
                             Text(
                                 text = newPrice,
                                 style = MaterialTheme.typography.titleMedium.copy(
@@ -2191,13 +2503,13 @@ fun EditProductDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if(isTablet) 16.dp else 8.dp))
 
                 // Quantity selector
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 36.dp),
+                        .padding(horizontal = if(isTablet) 36.dp else 15.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -2211,14 +2523,14 @@ fun EditProductDialog(
                             painter = painterResource(R.drawable.outline_remove_24),
                             contentDescription = "Decrease",
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if(isTablet) 22.dp else 10.dp)
                         )
 
                     }
 
                     Text(
                         text = quantity.value.toString(),
-                        modifier = Modifier.padding(horizontal = 24.dp),
+                        modifier = Modifier.padding(horizontal = if(isTablet) 24.dp else 10.dp),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.colorPrimary)
@@ -2228,27 +2540,27 @@ fun EditProductDialog(
                     IconButton(
                         onClick = { quantity.value++ },
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(if(isTablet) 40.dp else 25.dp)
                             .background(colorResource(R.color.colorPrimary), CircleShape)
                     ) {
                         Icon(
-                            imageVector =  Icons.Default.Add,
+                            imageVector = Icons.Default.Add,
                             contentDescription = "Increase",
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if(isTablet) 22.dp else 10.dp)
                         )
 
                     }
                 }
 
-                Spacer(modifier = Modifier.height(22.dp))
+                Spacer(modifier = Modifier.height(if(isTablet) 22.dp else 10.dp))
 
                 // Action buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 36.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(horizontal = if(isTablet) 36.dp else 15.dp, vertical = if(isTablet)8.dp else 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if(isTablet)12.dp else 7.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
@@ -2293,6 +2605,7 @@ fun EditProductDialog(
         }
     }
 }
+
 @Composable
 fun ManualBarcodeEntryDialog(
     onProceed: (String) -> Unit,
@@ -2359,11 +2672,11 @@ fun ManualBarcodeEntryDialog(
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                        contentColor = colorResource(R.color.colorRed)
-                    ),
-                    border = BorderStroke(2.dp, colorResource(R.color.colorRed))
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = colorResource(R.color.colorRed)
+                        ),
+                        border = BorderStroke(2.dp, colorResource(R.color.colorRed))
                     ) {
                         Text(
                             text = "Cancel",
@@ -2409,19 +2722,19 @@ fun DrawerContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(if(isTablet)350.dp else 300.dp)
+            .width(if (isTablet) 350.dp else 300.dp)
             .background(MaterialTheme.colorScheme.surface),
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(Modifier.height(50.dp))
-       /* Image(
-            painter = painterResource(id = R.drawable.ic_merchant_logo),
-            contentDescription = "Ad Banner",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxWidth().height(70.dp)
-        )
+        /* Image(
+             painter = painterResource(id = R.drawable.ic_merchant_logo),
+             contentDescription = "Ad Banner",
+             contentScale = ContentScale.Crop,
+             modifier = Modifier.fillMaxWidth().height(70.dp)
+         )
 
-        Divider()*/
+         Divider()*/
 
         Spacer(Modifier.height(16.dp))
 
@@ -2436,9 +2749,9 @@ fun DrawerContent(
                 painter = painterResource(id = R.drawable.transaction),
                 contentDescription = "transaction",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(if(isTablet) 24.dp else 22.dp)
+                modifier = Modifier.size(if (isTablet) 24.dp else 22.dp)
             )
-            Spacer(modifier = Modifier.width(if(isTablet) 16.dp else 10.dp))
+            Spacer(modifier = Modifier.width(if (isTablet) 16.dp else 10.dp))
             Text(
                 text = "View Transaction",
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -2467,13 +2780,13 @@ fun DrawerContent(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-           /* Icon(
-                painter = painterResource(id = icon),
-                contentDescription = text,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )*/
-            Spacer(modifier = Modifier.width(if(isTablet) 16.dp else 10.dp))
+            /* Icon(
+                 painter = painterResource(id = icon),
+                 contentDescription = text,
+                 tint = MaterialTheme.colorScheme.primary,
+                 modifier = Modifier.size(24.dp)
+             )*/
+            Spacer(modifier = Modifier.width(if (isTablet) 16.dp else 10.dp))
             Text(
                 text = "Show Price Checker",
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -2489,6 +2802,7 @@ fun DrawerContent(
 
     }
 }
+
 @Composable
 fun SingleSelectCheckboxes(
     options: List<Pair<AppMode, String>> = listOf(
@@ -2575,6 +2889,7 @@ fun WebViewScreen(url: String, navController: NavController) {
         navController.popBackStack()
     }
 }
+
 @Composable
 fun BackPressHandler(onBackPressed: () -> Unit) {
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -2594,8 +2909,10 @@ fun BackPressHandler(onBackPressed: () -> Unit) {
         }
     }
 }
+
 @Composable
 fun QRPaymentAlert(
+    isTablet: Boolean,
     qrCodeUrl: String,
     paymentAmount: String,
     onDismiss: () -> Unit
@@ -2674,7 +2991,11 @@ fun QRPaymentAlert(
                             settings.displayZoomControls = false
 
                             webViewClient = object : WebViewClient() {
-                                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                override fun onPageStarted(
+                                    view: WebView?,
+                                    url: String?,
+                                    favicon: android.graphics.Bitmap?
+                                ) {
                                     isLoading.value = true
                                     loadingError.value = false
                                 }
@@ -2728,6 +3049,7 @@ fun QRPaymentAlert(
         }
     }
 }
+
 @Composable
 fun QrPaymentAlert(
     amount: String,
@@ -2761,11 +3083,11 @@ fun QrPaymentAlert(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-               /* Image(
-                    painter = painterResource(id = R.drawable.id_duit_now_logo),
-                    contentDescription = "Ad Banner",
-                    modifier = Modifier.size(80.dp)
-                )*/
+                /* Image(
+                     painter = painterResource(id = R.drawable.id_duit_now_logo),
+                     contentDescription = "Ad Banner",
+                     modifier = Modifier.size(80.dp)
+                 )*/
 
                 Spacer(modifier = Modifier.height(10.dp))
                 // QR Code Image
@@ -2792,6 +3114,7 @@ fun QrPaymentAlert(
 
 @Composable
 fun PaymentSuccessAlert(
+    isTablet: Boolean,
     onSendReceipt: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -2802,7 +3125,7 @@ fun PaymentSuccessAlert(
     ) {
         Column(
             modifier = Modifier
-                .width(400.dp)
+                .width(if (isTablet)400.dp else 300.dp)
                 .background(
                     color = Color.White,
                     shape = RoundedCornerShape(20.dp)
@@ -2812,23 +3135,24 @@ fun PaymentSuccessAlert(
         ) {
             // Lottie Animation
             Box(
-                modifier = Modifier.size(150.dp),
+                modifier = Modifier.size(if (isTablet)150.dp else 85.dp),
                 contentAlignment = Alignment.Center
             ) {
                 LottieAnimation(
                     composition = timerComposition,
                     iterations = LottieConstants.IterateForever,
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(if (isTablet)100.dp else 60.dp)
                 )
 
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (isTablet)16.dp else 8.dp))
 
             // Success Text
             Text(
                 text = "Payment Successful!",
                 style = MaterialTheme.typography.titleLarge,
+                fontSize = if (isTablet) 20.sp else 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF00C853), // Green color for success
                 textAlign = TextAlign.Center
@@ -2839,11 +3163,12 @@ fun PaymentSuccessAlert(
             Text(
                 text = "Your payment has been processed successfully",
                 style = MaterialTheme.typography.bodyMedium,
+                fontSize = if (isTablet) 16.sp else 8.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(if (isTablet)24.dp else 10.dp))
 
             // Send Receipt Button
             Button(
@@ -2860,11 +3185,11 @@ fun PaymentSuccessAlert(
                 Text(
                     text = "Send Receipt",
                     fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
+                    fontSize = if (isTablet) 16.sp else 10.sp,
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(if (isTablet) 12.dp else 6.dp))
 
         }
     }
@@ -2872,6 +3197,7 @@ fun PaymentSuccessAlert(
 
 @Composable
 fun PaymentFailureAlert(
+    isTablet: Boolean,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -2882,7 +3208,7 @@ fun PaymentFailureAlert(
     ) {
         Column(
             modifier = Modifier
-                .width(400.dp)
+                .width(if (isTablet)400.dp else 300.dp)
                 .background(
                     color = Color.White,
                     shape = RoundedCornerShape(20.dp)
@@ -2892,23 +3218,24 @@ fun PaymentFailureAlert(
         ) {
             // Lottie Animation
             Box(
-                modifier = Modifier.size(150.dp),
+                modifier = Modifier.size(if (isTablet)150.dp else 85.dp),
                 contentAlignment = Alignment.Center
             ) {
                 LottieAnimation(
                     composition = timerComposition,
                     iterations = LottieConstants.IterateForever,
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(if (isTablet)100.dp else 60.dp)
                 )
 
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (isTablet)16.dp else 8.dp))
 
             // Success Text
             Text(
                 text = "Payment Failed!",
                 style = MaterialTheme.typography.titleLarge,
+                fontSize = if (isTablet) 16.sp else 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Red, // Green color for success
                 textAlign = TextAlign.Center
@@ -2919,6 +3246,7 @@ fun PaymentFailureAlert(
             Text(
                 text = "Please Try Again!",
                 style = MaterialTheme.typography.bodyMedium,
+                fontSize = if (isTablet) 16.sp else 10.sp,
                 color = Color.DarkGray,
                 textAlign = TextAlign.Center
             )
@@ -2940,7 +3268,7 @@ fun PaymentFailureAlert(
                 Text(
                     text = "Retry Again",
                     fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
+                    fontSize = if (isTablet) 16.sp else 10.sp,
                 )
             }
 
