@@ -730,42 +730,43 @@ fun CheckoutSummaryScreen(
             .padding(16.dp)
     ) {
         val paymentSummary = shoppingCartInfo.value
+
         Column {
             BillRow(
                 "Sub Total",
-                "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.totalPrice ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Promo Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.promotionSave ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.promotionSave ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Special Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.totalDiscount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.totalDiscount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Coupon Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.couponAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.couponAmount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Voucher Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.vourcherAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.vourcherAmount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Tax",
-                "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.totalTax ?: 0.0)}",
                 color = Color.Black
             )
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Spacer(modifier = Modifier.height(5.dp))
             BillRow(
                 "Grand Total",
-                "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.finalAmount  ?: 0.0)}",
                 isBold = true,
                 color = Color.Black
             )
@@ -816,7 +817,7 @@ fun CheckoutSummaryScreen(
             AnimatedPayableText()
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                text = "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.finalAmount ?: 0.0)}",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 40.sp,
@@ -1059,7 +1060,7 @@ fun CartScreen(
                                 color = Color.Black
                             )
                             Text(
-                                text = "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                                text = "${Constants.currencySymbol} ${getFormatedAmount(paymentSummary?.finalAmount ?: 0.0)}",
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = Color(0xFF4B308A) // Your purple color
                             )
@@ -1149,7 +1150,7 @@ fun CartScreen(
                     itemsIndexed(cartItems) { index, productData ->
                         CartItemCard(
                             isTablet = isTablet,
-                            productInfo = cartItems[0],
+                            productInfo = cartItems[index],
                             onRemove = { onRemoveItem(it) },
                             onEditProduct = { barCode, id, updatedQuantity ->
                                 onEditProduct(barCode, id, updatedQuantity)
@@ -1368,25 +1369,27 @@ fun CartItemCard(
                     }
                     Spacer(modifier = Modifier.height(3.dp))
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_discount_icon),
-                        contentDescription = "discount",
-                        tint = colorResource(R.color.colorOrange),
-                        modifier = Modifier
-                            .size(if (isTablet) 45.dp else 30.dp)
-                            .padding(start = 4.dp, end = if (isTablet) 10.dp else 6.dp)
-                    )
-
-                    Text(
-                        text = "Buy One Get One",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = if (isTablet) 17.sp else 10.sp,
-                            color = colorResource(R.color.colorOrange)
+                if (productInfo.hasPromo){
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_discount_icon),
+                            contentDescription = "discount",
+                            tint = colorResource(R.color.colorOrange),
+                            modifier = Modifier
+                                .size(if (isTablet) 45.dp else 30.dp)
+                                .padding(start = 4.dp, end = if (isTablet) 10.dp else 6.dp)
                         )
-                    )
-                }
+
+                        Text(
+                            text = "Buy One Get One",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = if (isTablet) 17.sp else 10.sp,
+                                color = colorResource(R.color.colorOrange)
+                            )
+                        )
+                    }
+            }
 
 
             }
@@ -3276,6 +3279,17 @@ fun PaymentFailureAlert(
 
         }
     }
+
+
+}
+
+private fun getFormatedAmount(amount : Double): String {
+    var  formattedAmount = "0.0"
+    try {
+        formattedAmount = String.format(java.util.Locale.US, "%.2f", amount ?: 0.0)
+    } catch (e: Exception) {
+    }
+    return formattedAmount
 }
 
 
