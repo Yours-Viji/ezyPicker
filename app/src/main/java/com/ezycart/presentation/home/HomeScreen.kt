@@ -526,7 +526,7 @@ fun PickersShoppingScreen(
     val cartDataList = viewModel.cartDataList.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
-    var canShowPaymentSummary = viewModel.canShowPaymentSuccessDialog.collectAsState()
+    var canShowPaymentSummary = viewModel.canShowPaymentSummary.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -545,7 +545,7 @@ fun PickersShoppingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.7f) // This sets the height to 70% of the screen
+                    .fillMaxHeight(0.9f) // This sets the height to 70% of the screen
             ) {
                 CheckoutSummaryScreen(
                     viewModel,
