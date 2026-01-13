@@ -1,7 +1,5 @@
 package com.ezycart.presentation.home
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -105,6 +103,21 @@ class HomeViewModel @Inject constructor(
             _canShowPriceChecker.update { preferencesManager.canShowPriceChecker() }
         }
 
+    }
+    fun setMyPaymentQr(path: String?){
+        try {
+            viewModelScope.launch {
+                 preferencesManager.setMyPaymentQRPath(path!!)
+            }
+        } catch (e: Exception) {
+        }
+    }
+     fun getMyPaymentQr(): String {
+         var myPaymentQr = ""
+         viewModelScope.launch {
+             myPaymentQr =  preferencesManager.getMyPaymentQR()
+         }
+        return myPaymentQr
     }
     fun showPaymentSummary(){
         _canShowPaymentSummary.value = true

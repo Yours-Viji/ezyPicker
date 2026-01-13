@@ -1,23 +1,17 @@
 package com.ezycart.presentation.home
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.util.Log
-import android.util.Size
-import android.view.KeyEvent
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -42,7 +36,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,6 +49,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
@@ -89,10 +83,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -106,7 +96,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
@@ -133,7 +122,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -149,23 +137,15 @@ import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
-import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.activation.FindDeviceConfiguration
-import com.ezycart.presentation.alertview.QrPaymentAlertView
-import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.data.Constants
-import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
 import io.nearpay.sdk.utils.enums.TransactionData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.net.URL
-import java.util.Locale
+import java.io.File
 
 @SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -201,6 +181,7 @@ fun HomeScreen(
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
     val showWalletScanner = remember { mutableStateOf(false) }
+    val showPaymentQrImage = remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -270,6 +251,14 @@ fun HomeScreen(
             },
             onDismiss = {
                 viewModel.hidePaymentSuccessAlertView()
+            }
+        )
+    }
+    if (showPaymentQrImage.value) {
+        CameraCaptureDialog(
+            viewModel,
+           true, onDismiss = {
+                showPaymentQrImage.value=false
             }
         )
     }
@@ -384,6 +373,14 @@ fun HomeScreen(
                             focusRequester.requestFocus()
                         }
                         viewModel.setPriceCheckerView(it)
+                    },
+                    onQrUpdateSelected = {
+                        scope.launch {
+                            scope.launch { drawerState.close() }
+                            showPaymentQrImage.value=true
+                            delay(100)
+                            focusRequester.requestFocus()
+                        }
                     }
                 )
             }
@@ -551,6 +548,7 @@ fun PickersShoppingScreen(
                     .fillMaxHeight(0.7f) // This sets the height to 70% of the screen
             ) {
                 CheckoutSummaryScreen(
+                    viewModel,
                     shoppingCartInfo = shoppingCartInfo,
                     onQrPaymentClick = { onQrPaymentClick() },
                     onTapToPayClick = { onTapToPayClick() }
@@ -681,6 +679,7 @@ fun PickersShoppingScreen(
                         .fillMaxSize()
                 ) {
                     CheckoutSummaryScreen(
+                        viewModel,
                         shoppingCartInfo,
                         onQrPaymentClick = { onQrPaymentClick() },
                         onTapToPayClick = { onTapToPayClick() })
@@ -722,11 +721,31 @@ fun PickersShoppingScreen(
 
 @Composable
 fun CheckoutSummaryScreen(
+    viewModel: HomeViewModel,
     shoppingCartInfo: State<ShoppingCartDetails?>,
     onQrPaymentClick: () -> Unit,
-    onTapToPayClick: () -> Unit
-) {
+    onTapToPayClick: () -> Unit,
 
+) {
+    var capturedImagePath = remember { mutableStateOf<String?>(null) }
+    var showResultPreview = remember { mutableStateOf(false) }
+    if (showResultPreview.value && capturedImagePath.value != null) {
+        AlertDialog(
+            onDismissRequest = { showResultPreview.value = false },
+            confirmButton = {
+                TextButton(onClick = { showResultPreview.value = false }) { Text("OK") }
+            },
+            title = { Text("My Payment QR") },
+            text = {
+                AsyncImage(
+                    model = capturedImagePath.value,
+                    contentDescription = null,
+                    modifier = Modifier.size(250.dp).clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -876,6 +895,39 @@ fun CheckoutSummaryScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "QR Payment",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = Color.White
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+            Button(
+                onClick = {
+                    capturedImagePath.value = viewModel.getMyPaymentQr()
+                    showResultPreview.value=true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(45.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.colorOrange),      // background color
+                    contentColor = Color.White,              // default for text & icons
+                    disabledContainerColor = Color.Gray,     // background when disabled
+                    disabledContentColor = Color.LightGray   // text/icon when disabled
+                )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.outline_qr_code_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(25.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Show My QR",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
@@ -2722,7 +2774,8 @@ fun DrawerContent(
     onTransActionSelected: () -> Unit,
     onAppModeUpdated: (AppMode) -> Unit,
     isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    onQrUpdateSelected: () -> Unit,
 ) {
 
     Column(
@@ -2803,6 +2856,29 @@ fun DrawerContent(
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange
+            )
+        }
+
+        Divider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onQrUpdateSelected() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.outline_qr_code_24),
+                contentDescription = "qr",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(if (isTablet) 24.dp else 22.dp)
+            )
+            Spacer(modifier = Modifier.width(if (isTablet) 16.dp else 10.dp))
+            Text(
+                text = "Update Payment QR",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
 
@@ -3284,6 +3360,126 @@ fun PaymentFailureAlert(
     }
 
 
+}
+
+@Composable
+fun CameraCaptureDialog(
+    viewModel: HomeViewModel,
+    showCamera: Boolean,
+    onDismiss: () -> Unit
+) {
+    if (!showCamera) return
+
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // State for the internal "Result" preview
+    var capturedImagePath = remember { mutableStateOf<String?>(null) }
+    var showResultPreview = remember { mutableStateOf(false) }
+
+    val previewView = remember { PreviewView(context) }
+    val imageCapture = remember { ImageCapture.Builder().build() }
+
+    // Bind camera when dialog opens
+    LaunchedEffect(showCamera) {
+        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+        try {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                imageCapture
+            )
+        } catch (e: Exception) {
+            Log.e("Camera", "Binding failed", e)
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false) // Allows full width for 22" screen
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.8f),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.Black
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 1. Camera Preview
+                AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+
+                // 2. Close Button (Top Right)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                }
+
+                // 3. Capture Button
+                Button(
+                    onClick = {
+                        val executor = ContextCompat.getMainExecutor(context)
+                        imageCapture.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
+                            override fun onCaptureSuccess(image: ImageProxy) {
+                                val bitmap = image.toBitmap()
+                                capturedImagePath.value = saveImageToInternalStorage(context, bitmap)
+                                viewModel.setMyPaymentQr(capturedImagePath.value)
+                                showResultPreview.value = true
+                                image.close()
+                            }
+                        })
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 32.dp)
+                        .size(80.dp),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Capture", tint = Color.Black)
+                }
+            }
+        }
+    }
+
+    // Secondary Alert View to show the result
+    if (showResultPreview.value && capturedImagePath.value != null) {
+        AlertDialog(
+            onDismissRequest = { showResultPreview.value = false },
+            confirmButton = {
+                TextButton(onClick = { showResultPreview.value = false }) { Text("OK") }
+            },
+            title = { Text("Image Saved") },
+            text = {
+                AsyncImage(
+                    model = capturedImagePath.value,
+                    contentDescription = null,
+                    modifier = Modifier.size(250.dp).clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        )
+    }
+}
+fun saveImageToInternalStorage(context: Context, bitmap: Bitmap): String? {
+    val fileName = "capture_${System.currentTimeMillis()}.jpg"
+    return try {
+        context.openFileOutput(fileName, Context.MODE_PRIVATE).use { stream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+        }
+        // Return the absolute path for later use
+        File(context.filesDir, fileName).absolutePath
+    } catch (e: Exception) {
+        Log.e("Camera", "Save failed", e)
+        null
+    }
 }
 
 private fun getFormatedAmount(amount : Double): String {

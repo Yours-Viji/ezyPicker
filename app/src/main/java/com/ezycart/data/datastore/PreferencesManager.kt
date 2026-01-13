@@ -44,6 +44,7 @@ class PreferencesManager @Inject constructor(
         private val EMPLOYEE_ID = intPreferencesKey("id")
         private val EMPLOYEE_STATUS = intPreferencesKey("status")
         private val CAN_SHOW_PRICE_CHECKER = booleanPreferencesKey("showPriceChecker")
+        private val MY_PAYMENT_QR_IMAGE_PATH = stringPreferencesKey("my_payment_qr_path")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = dataStore.data
@@ -124,6 +125,11 @@ class PreferencesManager @Inject constructor(
             preferences[CAN_SHOW_PRICE_CHECKER] = status
         }
     }
+    suspend fun setMyPaymentQRPath(path: String){
+        dataStore.edit { preferences ->
+            preferences[MY_PAYMENT_QR_IMAGE_PATH] = path
+        }
+    }
     suspend fun setAppMode(appMode: AppMode){
         dataStore.edit { preferences ->
             preferences[APP_MODE] = appMode.name
@@ -160,6 +166,10 @@ class PreferencesManager @Inject constructor(
             preferences[SHOPPING_CART_ID] ?: ""
         }.distinctUntilChanged()
     }
+    suspend fun getMyPaymentQR(): String {
+        return dataStore.data.first()[MY_PAYMENT_QR_IMAGE_PATH] ?: ""
+    }
+
     suspend fun getMerchantId(): String {
         return dataStore.data.first()[MERCHANT_ID] ?: "11"
     }
