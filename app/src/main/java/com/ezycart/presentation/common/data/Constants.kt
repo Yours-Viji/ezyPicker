@@ -10,7 +10,7 @@ import java.util.Date
 object Constants {
     var BASE_URL = com.ezycart.BuildConfig.BASE_URL
 
-    var EZY_LITE_TRANSACTION_URL = "${BASE_URL}/ezycart/lite-transactions/15/23"
+    var EZY_LITE_TRANSACTION_URL = "${BASE_URL}/ezycart/lite-transactions/11/19"
 
     var currencySymbol = BuildConfig.CURRENCY_SYMBOL
     const val CONTENT_TYPE = "Content-Type"
