@@ -258,6 +258,8 @@ fun HomeScreen(
         }
     }
     if (showPaymentSuccessDialog.value) {
+        //viewModel.initNewShopping()
+        viewModel.hidePaymentSummary()
         PaymentSuccessAlert(
             isTablet,
             onSendReceipt = {
@@ -527,15 +529,16 @@ fun PickersShoppingScreen(
     val cartDataList = viewModel.cartDataList.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
+    var canShowPaymentSummary = viewModel.canShowPaymentSuccessDialog.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
-    var showSheet = remember { mutableStateOf(false) }
 
-    if (showSheet.value) {
+
+    if (canShowPaymentSummary.value) {
         ModalBottomSheet(
-            onDismissRequest = { showSheet.value = false },
+            onDismissRequest = { viewModel.hidePaymentSummary() },
             sheetState = sheetState,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             containerColor = Color.White,
@@ -655,7 +658,7 @@ fun PickersShoppingScreen(
                             id = id
                         )
                     },
-                    onPayNowClick = { showSheet.value = true},
+                    onPayNowClick = { viewModel.showPaymentSummary()},
                 )
             }
         }

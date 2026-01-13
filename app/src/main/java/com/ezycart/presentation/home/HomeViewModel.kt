@@ -1,5 +1,7 @@
 package com.ezycart.presentation.home
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -80,7 +82,10 @@ class HomeViewModel @Inject constructor(
     private var pollingJob: Job? = null
     private val _paymentStatusState = MutableStateFlow<PaymentStatusState>(PaymentStatusState.Idle)
     val paymentStatusState: StateFlow<PaymentStatusState> = _paymentStatusState.asStateFlow()
-var tempcounter =0
+
+    private val _canShowPaymentSummary = MutableStateFlow<Boolean>(false)
+    val canShowPaymentSummary: StateFlow<Boolean> = _canShowPaymentSummary.asStateFlow()
+
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -101,7 +106,12 @@ var tempcounter =0
         }
 
     }
-
+    fun showPaymentSummary(){
+        _canShowPaymentSummary.value = true
+    }
+    fun hidePaymentSummary(){
+        _canShowPaymentSummary.value = false
+    }
     fun setPriceCheckerView(canShow: Boolean){
         viewModelScope.launch {
             preferencesManager.setPriceCheckerStatus(canShow)
